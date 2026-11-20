@@ -221,3 +221,51 @@ Diagnóstico das demais prioridades:
   Validar teste de regressão em checkout limpo e executar fluxo com credencial
   existente antes de entregar instalador, APK e ZIP. Publicação com Pedro.
   Alteração em commit local desta branch, sem PR publicado.
+
+## 20/11/2026 — JOAO — joao/gps-mapas
+
+Commit de implementação e382de6, sobre d66d023 da frente JOAO. PR pendente.
+O teste com as seis partes locais do BR Brasil 6.1 identificou duas etapas
+distintas. O parser leu brbrasil.mbd (1.030 setores) e o gerador original
+abortou ao tratar um prefab isolado. O Hub agora consegue construir um grafo
+a partir de sentidos de pista e conexões explícitas de curvas do prefab quando
+o gerador falha. Amostra as curvas das estradas e identifica locais e faixas.
+Os 12 trechos deste mod com definição de pista ausente ficam fora do roteamento
+alternativo. O alcance do mapa é o dos dados que o extrator consegue interpretar.
+
+O log real do perfil ativo indicava eldorado.mbd e cinco pacotes ME com cabeçalho
+incompatível. A seleção automática verifica módulo e sessão e identifica pacotes
+ilegíveis. Pode importar JSON externo compatível. Atualização por perfil é
+opcional. A lista de mods mantém a ordem do log; a seleção manual depende da
+ordem fornecida. O celular usa o grafo do Hub e mantém o rastro separado.
+
+Android: mapa escuro, rota ciano, perspectiva/2D, giro por gesto, manobras
+seguintes, indicação de faixas disponíveis, combustível e ETA SIM/REAL pela
+escala local. Busca paradas próximas à rota e calcula rota para empresa e cidade
+identificadas no frete. A rota calculada pode divergir das marcações do jogador
+no navegador do jogo. QR usa o pareamento na rede local. Vozes Android usam
+frases em 12 idiomas conforme a voz instalada; fallback integrado do PC em
+português. O ambiente Python local não tem OpenCV para exibir QR; descoberta e
+código seguem disponíveis. Checkout preparado para abrir o Hub em desenvolvimento.
+
+Verificações nesta máquina:
+- Entrada normal de build do mapa com os seis arquivos reais: grafo aceito pelo
+  Hub, 87.705 nós, 91.279 segmentos, 1.825 indicações de faixa, 2.594 registros
+  de postos, 6.136 de descanso, 464 de oficina e 2.117 de empresas. São registros
+  do extrator, possivelmente múltiplos por instalação. Comparado ao resultado da
+  conversão isolada. 79.343 nós alcançáveis a partir do primeiro nó.
+- Cinco rotas entre cerca de 30 e 306 mil unidades calculadas pelo RoadMap Java
+  em JVM, verificando cada ligação. Adaptadores de JSON usados nesse teste de
+  lógica. Frases com distância exercitadas nas 12 línguas. Handler GET /mapa
+  entregou o conteúdo com o SHA-256 esperado em memória. HTTP real local
+  bloqueado por WinError 10013 nesta sessão.
+- Três regressões GPS passaram. Suíte completa 23/25: backup histórico ausente
+  e timeout UDP já registrados na tarefa anterior. Python compilou os módulos.
+  DLL x64 compilada no MSVC com os dois exports SCS verificados; APK de
+  desenvolvimento compilado e assinatura v2/v3 validada.
+- Sem instalação no jogo ou telefone e sem publicação. Próxima ação: testar
+  o BR Brasil no percurso conhecido, checar vias, sentidos, faixa, manobras,
+  sincronização, voz e desempenho no aparelho. Para Eldorado, obter uma fonte
+  compatível de estradas do autor. Não há validação de acesso fora da LAN,
+  de equivalência à rota do jogo ou de cobertura de todos os mods. Pacote de
+  produção depende da credencial comercial e das validações já pendentes.
