@@ -6,17 +6,18 @@
 #include <string>
 #include "scssdk_telemetry.h"
 #include "common/scssdk_telemetry_common_configs.h"
+#include "common/scssdk_telemetry_common_channels.h"
 #include "common/scssdk_telemetry_truck_common_channels.h"
 
 namespace {
 SOCKET output = INVALID_SOCKET;
 sockaddr_in destination{};
 ULONGLONG last_send = 0;
-double speed, distance, seconds, limit, x, z, heading;
+double local_scale, speed, distance, seconds, limit, x, z, heading;
 double fuel, fuel_capacity, rpm, cruise, odometer, wear;
 int gear;
 unsigned long long income;
-std::string truck, cargo, origin, delivery;
+std::string truck, cargo, origin, delivery, city_id, company_id;
 bool positioned = false, paused = true;
 
 void close_output() {
@@ -58,7 +59,7 @@ SCSAPI_VOID configuration(scs_event_t, const void* info, scs_context_t) {
     const bool is_truck = std::strcmp(cfg->id, SCS_TELEMETRY_CONFIG_truck) == 0;
     const bool is_job = std::strcmp(cfg->id, SCS_TELEMETRY_CONFIG_job) == 0;
     if (!is_truck && !is_job) return;
-    if (is_job) { cargo.clear(); origin.clear(); delivery.clear(); income = 0; }
+    if (is_job) { cargo.clear(); origin.clear(); delivery.clear(); city_id.clear(); company_id.clear(); income = 0; }
     if (is_truck) { truck.clear(); fuel_capacity = -1; }
     for (const auto* attr = cfg->attributes; attr && attr->name; ++attr) {
         const auto& value = attr->value;
@@ -68,6 +69,8 @@ SCSAPI_VOID configuration(scs_event_t, const void* info, scs_context_t) {
             if (is_truck && named(SCS_TELEMETRY_CONFIG_ATTRIBUTE_name)) truck = text;
             if (is_job && named(SCS_TELEMETRY_CONFIG_ATTRIBUTE_cargo)) cargo = text;
             if (is_job && named(SCS_TELEMETRY_CONFIG_ATTRIBUTE_source_city)) origin = text;
+            if (is_job && named(SCS_TELEMETRY_CONFIG_ATTRIBUTE_destination_company_id)) company_id = text;
+            if (is_job && named(SCS_TELEMETRY_CONFIG_ATTRIBUTE_destination_city_id)) city_id = text;
             if (is_job && named(SCS_TELEMETRY_CONFIG_ATTRIBUTE_destination_city)) delivery = text;
         }
         if (is_truck && value.type == SCS_VALUE_TYPE_float && named(SCS_TELEMETRY_CONFIG_ATTRIBUTE_fuel_capacity))
@@ -89,29 +92,30 @@ SCSAPI_VOID frame(scs_event_t, const void*, scs_context_t) {
     const int size = std::snprintf(numbers, sizeof(numbers),
         "{\"speed\":%.3f,\"distance\":%.3f,\"seconds\":%.3f,\"limit\":%.3f,\"x\":%.3f,\"z\":%.3f,\"heading\":%.5f,"
         "\"fuel\":%.2f,\"fuelCapacity\":%.2f,\"rpm\":%.1f,\"cruise\":%.3f,\"odometer\":%.2f,\"wear\":%.5f,"
-        "\"gear\":%d,\"income\":%llu,\"paused\":%s",
+        "\"localScale\":%.3f,\"gear\":%d,\"income\":%llu,\"paused\":%s",
         speed, distance, seconds, limit, x, z, heading, fuel, fuel_capacity, rpm, cruise, odometer, wear,
-        gear, income, paused ? "true" : "false");
+        local_scale, gear, income, paused ? "true" : "false");
     if (size < 1 || size >= sizeof(numbers)) return;
     const std::string payload = std::string(numbers, size) + ",\"truckName\":" + json_string(truck) +
         ",\"cargo\":" + json_string(cargo) + ",\"origin\":" + json_string(origin) +
-        ",\"delivery\":" + json_string(delivery) + '}';
+        ",\"delivery\":" + json_string(delivery) + ",\"cityId\":" + json_string(city_id) +
+        ",\"companyId\":" + json_string(company_id) + '}';
     if (payload.size() <= 8192)
         sendto(output, payload.data(), static_cast<int>(payload.size()), 0,
             reinterpret_cast<const sockaddr*>(&destination), sizeof(destination));
 }
 }
 
-__declspec(dllexport) SCSAPI_RESULT scs_telemetry_init(scs_u32_t version, const scs_telemetry_init_params_t* params) {
+SCSAPI_RESULT scs_telemetry_init(scs_u32_t version, const scs_telemetry_init_params_t* params) {
     if (version != SCS_TELEMETRY_VERSION_1_00 && version != SCS_TELEMETRY_VERSION_1_01)
         return SCS_RESULT_unsupported;
     if (!params) return SCS_RESULT_generic_error;
     const auto* sdk = static_cast<const scs_telemetry_init_params_v100_t*>(params);
-    speed = distance = seconds = limit = -1;
+    local_scale = speed = distance = seconds = limit = -1;
     fuel = fuel_capacity = rpm = cruise = odometer = wear = -1;
     gear = 0;
     income = 0;
-    truck.clear(); cargo.clear(); origin.clear(); delivery.clear();
+    truck.clear(); cargo.clear(); origin.clear(); delivery.clear(); city_id.clear(); company_id.clear();
     positioned = false;
     paused = true;
     last_send = 0;
@@ -130,6 +134,7 @@ __declspec(dllexport) SCSAPI_RESULT scs_telemetry_init(scs_u32_t version, const 
         close_output();
         return SCS_RESULT_generic_error;
     }
+    sdk->register_for_channel(SCS_TELEMETRY_CHANNEL_local_scale, SCS_U32_NIL, SCS_VALUE_TYPE_float, flags, number, &local_scale);
     sdk->register_for_channel(SCS_TELEMETRY_TRUCK_CHANNEL_speed, SCS_U32_NIL, SCS_VALUE_TYPE_float, flags, number, &speed);
     sdk->register_for_channel(SCS_TELEMETRY_TRUCK_CHANNEL_navigation_distance, SCS_U32_NIL, SCS_VALUE_TYPE_float, flags, number, &distance);
     sdk->register_for_channel(SCS_TELEMETRY_TRUCK_CHANNEL_navigation_time, SCS_U32_NIL, SCS_VALUE_TYPE_float, flags, number, &seconds);
@@ -147,6 +152,6 @@ __declspec(dllexport) SCSAPI_RESULT scs_telemetry_init(scs_u32_t version, const 
     return SCS_RESULT_ok;
 }
 
-__declspec(dllexport) SCSAPI_VOID scs_telemetry_shutdown() {
+SCSAPI_VOID scs_telemetry_shutdown() {
     close_output();
 }

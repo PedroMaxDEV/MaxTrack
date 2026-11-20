@@ -78,7 +78,9 @@ public final class MainActivity extends Activity {
     long demoStart, lastSpeedWarning, nextMapTry;
     boolean mapDownloading;
     String mapStatus="", cachedMapId="";
-    boolean speeding;
+    boolean speeding, realTime, freightRoute;
+    String lastFreight="";
+    TextView fuelGauge;
     float speechRate=1, speechPitch=1;
     String voice="", voiceOutput="off", scope="default", mapId="", alertScope="";
     int alertRevision=-1;
@@ -121,7 +123,7 @@ public final class MainActivity extends Activity {
                 });
             } catch(Exception ignored) {}
         });
-        if(hub==null)ui.postDelayed(this::discover,450);
+        if(!openPairLink(getIntent()) && hub==null)ui.postDelayed(this::discover,450);
     }
 
     @Override protected void onResume() {
@@ -254,7 +256,7 @@ public final class MainActivity extends Activity {
         LinearLayout turn=stack(true);inset(turn,12);turn.setBackground(surface(0xf11b2c3d,LINE,15));
         maneuver=text("",22,INK,true);maneuverDetail=text("",12,MUTED,false);
         turn.addView(maneuver);turn.addView(maneuverDetail);
-        place(canvas,turn,Gravity.TOP|Gravity.LEFT,11,11,11,0,-1);
+        place(canvas,turn,Gravity.TOP|Gravity.LEFT,11,11,11,0,Math.min(dp(270),getResources().getDisplayMetrics().widthPixels-dp(22)));
         hazard=text("",14,0xffffddae,true);insetCard(hazard);
         hazard.setBackground(surface(0xf14b331f,0xffbf874e,12));
         place(canvas,hazard,Gravity.TOP|Gravity.LEFT,12,91,12,0,-2);
@@ -262,17 +264,21 @@ public final class MainActivity extends Activity {
         for(String label:new String[]{"+","−","⌖"}) {
             vertical(zoom,button(label,()->{ if(label.equals("⌖"))mapView.center();else mapView.zoom(label.equals("+")?1.4f:1/1.4f); }),4);
         }
-        place(canvas,zoom,Gravity.BOTTOM|Gravity.RIGHT,0,0,12,102,dp(47));
+        vertical(zoom,button("Vista",()->mapView.tilt()),4);
+        place(canvas,zoom,Gravity.BOTTOM|Gravity.RIGHT,0,0,12,162,dp(62));
         LinearLayout gauge=stack(true);inset(gauge,9);gauge.setBackground(surface(0xf01b2c3d,LINE,16));
         speed=text("—",31,INK,true);limit=text("",12,0xffffc3a8,true);
         gauge.addView(speed);gauge.addView(text("km/h",11,MUTED,false));gauge.addView(limit);
         place(canvas,gauge,Gravity.BOTTOM|Gravity.LEFT,12,0,0,101,-2);
+        fuelGauge=text("",14,INK,true);insetCard(fuelGauge);
+        place(canvas,fuelGauge,Gravity.BOTTOM|Gravity.RIGHT,0,0,12,102,-2);
         LinearLayout bottom=stack(true);inset(bottom,9);bottom.setBackground(surface(0xf61b2c3d,LINE,15));
         tripBar=text("",15,INK,true);mapCaption=text("",11,MUTED,false);
+        tripBar.setOnClickListener(v->{realTime=!realTime;display();});
         bottom.addView(tripBar);bottom.addView(mapCaption);
         LinearLayout actions=stack(false);
         item(actions,button("Destino",()->startPin(false)),5);
-        item(actions,button("+ Parada",()->startPin(true)),5);
+        item(actions,button("+ Parada",this::chooseStop),5);
         item(actions,button("Limpar",this::clearRoute),0);
         vertical(bottom,actions,5);
         place(canvas,bottom,Gravity.BOTTOM|Gravity.LEFT,10,0,10,8,-1);
@@ -290,7 +296,7 @@ public final class MainActivity extends Activity {
     }
 
     void setMap(RoadMap graph,String id) {
-        map=graph;mapId=id;route=null;routeGeneration++;planning=false;stops.clear();choosing=false;
+        lastFreight="";freightRoute=false;map=graph;mapId=id;route=null;routeGeneration++;planning=false;stops.clear();choosing=false;
         if(mapView!=null) {mapView.selecting=false;mapView.setMap(graph);}
     }
 
@@ -404,11 +410,52 @@ public final class MainActivity extends Activity {
         });
     }
 
+    void chooseStop() {
+        if(map==null || route==null || truck==null || planning || stops.size()>=9){startPin(true);return;}
+        RoadMap selected=map;
+        RoadMap.Route current=route;
+        int first=current.segment;
+        double progress=current.progress;
+        routing.execute(()->{
+            // Search a corridor ahead instead of suggesting a stop behind the truck.
+            java.util.Map<String,RoadMap.Place> choices=new java.util.LinkedHashMap<>();
+            for(int i=first;i+1<current.nodes.length && current.cumulative[i]-progress<4000 && choices.size()<3;i++) {
+                int a=current.nodes[i],b=current.nodes[i+1];
+                double dx=selected.x[b]-selected.x[a], dz=selected.z[b]-selected.z[a];
+                double length=selected.distance(a,b);
+                if(length==0)continue;
+                for(RoadMap.Place place:selected.places){
+                    if(place.type.equals("company")||choices.containsKey(place.type))continue;
+                    double x=place.x-selected.x[a],z=place.z-selected.z[a];
+                    double t=Math.max(0,Math.min(1,(x*dx+z*dz)/(length*length)));
+                    double at=current.cumulative[i]+t*length-progress;
+                    if(at>=0 && at<=4000 && Math.hypot(x-t*dx,z-t*dz)<=120) choices.put(place.type,place);
+                }
+            }
+            ui.post(()->{
+                if(isDestroyed()||selected!=map||current!=route)return;
+                ArrayList<RoadMap.Place> places=new ArrayList<>(choices.values());
+                String[] options=new String[places.size()+1];options[0]="Escolher no mapa";
+                for(int i=0;i<places.size();i++) {
+                    String kind=places.get(i).type;
+                    options[i]=kind.equals("fuel")?"Posto na rota":kind.equals("rest")?"Descanso na rota":"Oficina na rota";
+                }
+                new AlertDialog.Builder(this).setTitle("Adicionar parada").setItems(options,(d,i)->{
+                    if(current!=route || selected!=map)return;
+                    startPin(true);
+                    if(i>0 && choosing){RoadMap.Place place=places.get(i-1);pin(place.x,place.z);}
+                }).show();
+            });
+        });
+    }
+
     void startPin(boolean append) {
+        if(planning && !freightRoute)return;
         if(map==null || truck==null) {toast("Carregue um mapa e entre na cabine ou use a demonstração.");return;}
         if(append&&stops.isEmpty()) {toast("Escolha o destino primeiro.");return;}
         if(append&&stops.size()>=9) {toast("Limite de oito paradas intermediárias.");return;}
-        choosing=true;waypointMode=append?1:0;if(mapView!=null)mapView.selecting=true;display();
+        if (planning && freightRoute) {routeGeneration++;planning=false;}
+        freightRoute=false;choosing=true;waypointMode=append?1:0;if(mapView!=null)mapView.selecting=true;display();
     }
 
     void pin(double x,double z) {
@@ -438,7 +485,7 @@ public final class MainActivity extends Activity {
     }
 
     void clearRoute() {
-        route=null;stops.clear();choosing=false;planning=false;routeGeneration++;
+        freightRoute=false;route=null;stops.clear();choosing=false;planning=false;routeGeneration++;
         if(mapView!=null) mapView.selecting=false;
         display();
     }
@@ -465,11 +512,46 @@ public final class MainActivity extends Activity {
         }
         if(selected==null)return "";
         String kind=labelAlert(selected.optString("type"));
-        if(announced.add(selected.optString("id")))speak(kind+" à frente.");
+        if(announced.add(selected.optString("id")))speak(selected.optString("type").equals("radar")?VoiceCue.CAMERA:
+                selected.optString("type").equals("bump")?VoiceCue.BUMP:VoiceCue.CHECKPOINT,0,false);
         return kind+" · "+Math.round(closest)+" m";
     }
 
+    void followFreight() {
+        if (truck==null || map==null || choosing || (route!=null && !freightRoute)) return;
+        String city=truck.optString("cityId"), company=truck.optString("companyId");
+        String job=city.isEmpty()||company.isEmpty()?"":city+"/"+company;
+        if (job.equals(lastFreight)) return;
+        lastFreight=job;
+        if (freightRoute) clearRoute();
+        if (job.isEmpty() || planning) return;
+        RoadMap.Place match=null;
+        for (RoadMap.Place place:map.places) {
+            if (city.equals(place.city) && company.equals(place.company)) {
+                if (match!=null) return; // Multiple depots: let the driver choose.
+                match=place;
+            }
+        }
+        if (match==null) return;
+        final RoadMap.Place depot=match;
+        final RoadMap selected=map;
+        final double x=truck.optDouble("x"),z=truck.optDouble("z");
+        final int generation=++routeGeneration;
+        freightRoute=true;planning=true;
+        routing.execute(()->{
+            int start=selected.nearest(x,z,270),end=selected.nearest(depot.x,depot.z,140);
+            RoadMap.Route planned=start>=0&&end>=0?selected.plan(start,Collections.singletonList(end)):null;
+            ui.post(()->{
+                if(isDestroyed()||generation!=routeGeneration||map!=selected)return;
+                planning=false;route=planned;
+                if(planned!=null){stops.clear();stops.add(end);}
+                display();
+            });
+        });
+    }
+
     void display() {
+        followFreight();
         String warning=roadWarning();
         String turn=truck==null?"Aguardando o caminhão":"Acompanhando o caminhão";
         String detail=map==null?"Importe um mapa rodoviário pelo Max Hub.":"Toque em Destino para traçar uma rota.";
@@ -484,14 +566,22 @@ public final class MainActivity extends Activity {
                 while(i<route.steps.size()&&route.steps.get(i).at-route.progress<8)i++;
                 if(i==route.steps.size()) {
                     turn="Destino alcançado";detail="";
-                    if(route.spoken<i&&!truck.optBoolean("paused")) {route.spoken=i;speak("Você chegou ao destino.");}
+                    if(route.spoken<i&&!truck.optBoolean("paused")) {route.spoken=i;speak(VoiceCue.ARRIVED,0,false);}
                 } else {
                     RoadMap.Step step=route.steps.get(i);
                     int meters=(int)(step.at-route.progress);
-                    turn=step.glyph+"  "+step.text;detail="Em "+meters+" m no mapa";
+                    turn=meters+" m   "+step.glyph+"  "+step.text;
+                    if(i+1<route.steps.size()) {
+                        RoadMap.Step next=route.steps.get(i+1);
+                        detail="Depois   "+next.glyph+"   "+Math.round(next.at-step.at)+" m";
+                    } else detail="Última manobra";
+                    for(int j=route.segment;j+1<route.nodes.length && route.cumulative[j]-route.progress<160;j++) {
+                        String hint=map.lanes.get(RoadMap.edgeKey(route.nodes[j],route.nodes[j+1]));
+                        if(hint!=null){ detail=hint+"   "+detail;break; }
+                    }
                     if(warning.isEmpty() && meters<=Math.max(45,Math.abs(truck.optDouble("speed"))*5)
                             && route.spoken<i&&!truck.optBoolean("paused")) {
-                        route.spoken=i;speak(step.text+" em "+Math.max(10,Math.round(meters/10f)*10)+" metros.");
+                        route.spoken=i;speak(step.cue,Math.max(10,Math.round(meters/10f)*10),false);
                     }
                 }
             }
@@ -500,12 +590,15 @@ public final class MainActivity extends Activity {
             double allowed=truck.optDouble("limit",-1);
             boolean over=allowed>0 && Math.abs(truck.optDouble("speed"))-allowed>2.2;
             if(over&&!speeding&&warning.isEmpty()&&SystemClock.elapsedRealtime()-lastSpeedWarning>12000) {
-                speak("Atenção. Você está acima do limite de velocidade.");lastSpeedWarning=SystemClock.elapsedRealtime();speeding=true;
+                speak(VoiceCue.SPEED,0,false);lastSpeedWarning=SystemClock.elapsedRealtime();speeding=true;
             } else if(!over) speeding=false;
         }
         String destination=truck==null?"":truck.optString("delivery");
         String remaining=numeric("distance",.001," km");
-        long minutes=truck==null?-1:Math.round(truck.optDouble("seconds",-60)/60);
+        double seconds=truck==null?-1:truck.optDouble("seconds",-1);
+        double scale=truck==null?-1:truck.optDouble("localScale",-1);
+        if (realTime) seconds=scale>0?seconds/scale:-1;
+        long minutes=seconds<0?-1:Math.round(seconds/60);
         String eta=minutes<0?"—":String.format(PT,"%dh %02dm",minutes/60,minutes%60);
         if(mapView!=null) {
             mapView.route=route;mapView.stops=new ArrayList<>(stops);mapView.hazards=alerts;
@@ -513,9 +606,15 @@ public final class MainActivity extends Activity {
             maneuver.setText(turn);maneuverDetail.setText(detail);
             hazard.setText(warning);hazard.setVisibility(warning.isEmpty()?View.GONE:View.VISIBLE);
             speed.setText(numeric("speed",3.6,""));limit.setText("Limite "+numeric("limit",3.6,""));
-            tripBar.setText((destination.isEmpty()?"Viagem":destination)+"  ·  "+remaining+"  ·  "+eta);
+            if(route!=null && !freightRoute) {
+                destination="Destino no mapa";
+                remaining=Math.round(route.cumulative[route.nodes.length-1]-route.progress)+" m";
+                eta="—";
+            }
+            fuelGauge.setText(numeric("fuel",1," L"));
+            tripBar.setText((destination.isEmpty()?"Viagem":destination)+"  ·  "+remaining+"  ·  "+(realTime?"REAL ≈ ":"SIM ")+eta);
             mapCaption.setText(!demo&&!mapStatus.isEmpty()?mapStatus:
-                map==null?"Percurso ao vivo · dados do ETS2":map.name+" · mapa no dispositivo");
+                map==null?"Somente rastro · aguardando mapa de estradas":map.name+" · mapa no dispositivo");
         }
         if(tripDetails!=null) {
             tripDetails.setText((destination.isEmpty()?"Sem entrega ativa":destination)+"\n"
@@ -549,6 +648,24 @@ public final class MainActivity extends Activity {
                     .setNeutralButton("Endereço manual",(d,i)->manual()).setNegativeButton("Fechar",null).show();
             });
         });
+    }
+
+    boolean openPairLink(Intent intent) {
+        android.net.Uri uri=intent.getData();
+        if(uri==null || !"maxgps".equals(uri.getScheme()) || !"parear".equals(uri.getHost())) return false;
+        List<String> parts=uri.getPathSegments();
+        String code=uri.getQueryParameter("codigo");
+        if(parts.size()!=2 || !HubConnection.privateIp(parts.get(0)) || !parts.get(1).matches("[0-9]{1,5}")
+                || code==null || !code.matches("[0-9]{6}")) return false;
+        int port=Integer.parseInt(parts.get(1));
+        if(port<1 || port>65535)return false;
+        HubConnection device=new HubConnection(parts.get(0),port,"",parts.get(0));
+        new AlertDialog.Builder(this).setTitle("Parear com "+parts.get(0)+"?")
+            .setNegativeButton("Cancelar",null).setPositiveButton("Conectar",(d,i)->commands.execute(()->{
+                try {HubConnection paired=device.pair(code);ui.post(()->{if(!isDestroyed())connect(paired);});}
+                catch(Exception e){ui.post(()->toast("Falha ao parear. Abra um novo QR no Hub."));}
+            })).show();
+        return true;
     }
 
     void enterCode(HubConnection device) {
@@ -614,7 +731,7 @@ public final class MainActivity extends Activity {
             }).setNegativeButton("Fechar",null).show()),12);
         vertical(column,button(voice.isEmpty()?"Escolher voz":voice,this::chooseVoice),8);
         vertical(column,button("Velocidade e tom",this::tuneVoice),8);
-        vertical(column,button("Testar voz",()->speak("Max GPS. Teste de voz. Radar à frente.",true)),8);
+        vertical(column,button("Testar voz",()->speak(VoiceCue.CAMERA,0,true)),8);
         voiceStatus=text(voiceMessage,13,MINT,false);
         vertical(column,voiceStatus,5);
         vertical(column,button("Instalar voz no Android",this::installVoice),8);
@@ -706,8 +823,8 @@ public final class MainActivity extends Activity {
         if(audio!=null){audio.release();audio=null;}
         if(audioClip!=null){audioClip.delete();audioClip=null;}
     }
-    void speak(String phrase) {speak(phrase,false);}
-    void speak(String phrase,boolean test) {
+    void speak(VoiceCue cue,int meters,boolean test) {
+        String phrase=cue.phrase(PT,meters);
         if(!visible) return;
         if(voiceOutput.equals("off")){if(test)voiceNotice("Selecione Celular ou PC do Hub.");return;}
         if(voiceBusy&&!test)return;
@@ -737,7 +854,8 @@ public final class MainActivity extends Activity {
             tts.setSpeechRate(speechRate);tts.setPitch(speechPitch);
         }
         releaseAudio();
-        if(!available||tts.speak(phrase,TextToSpeech.QUEUE_FLUSH,null,Integer.toString(sequence))!=TextToSpeech.SUCCESS)
+        String localized=available && tts.getVoice()!=null?cue.phrase(tts.getVoice().getLocale(),meters):phrase;
+        if(!available||tts.speak(localized,TextToSpeech.QUEUE_FLUSH,null,Integer.toString(sequence))!=TextToSpeech.SUCCESS)
             playOnPhoneFromHub(phrase,test,sequence);
     }
 
@@ -889,7 +1007,13 @@ public final class MainActivity extends Activity {
         if(demo){
             demoStart=SystemClock.elapsedRealtime();
             try {
-                RoadMap sample=new RoadMap(new JSONObject("{\"version\":1,\"name\":\"Circuito de demonstração\",\"nodes\":[[0,300],[0,0],[320,0],[320,-280],[690,-280],[690,300]],\"roads\":[[0,1,0],[1,2,0],[2,3,0],[3,4,0],[4,5,0],[5,0,0]]}"));
+                JSONObject circuit=json("version",1,"name","Circuito de demonstração",
+                    "nodes",new JSONArray("[[0,300],[0,0],[320,0],[320,-280],[690,-280],[690,300]]"),
+                    "roads",new JSONArray("[[0,1,1],[1,2,1],[2,3,1],[3,4,1],[4,5,1],[5,0,1]]"),
+                    "lanes",new JSONArray("[[1,2,2,2]]"),
+                    "places",new JSONArray().put(json("type","fuel","x",320,"z",0))
+                        .put(json("type","company","city","demo","company","depot","x",690,"z",-280)));
+                RoadMap sample=new RoadMap(circuit);
                 setMap(sample,"demo");
                 alerts.put(json("id","demo-r","type","radar","x",0,"z",140,"heading",0));
                 alerts.put(json("id","demo-b","type","bump","x",190,"z",0,"heading",-.25));
@@ -912,9 +1036,9 @@ public final class MainActivity extends Activity {
             if(progress<=length || i==points.length-1){
                 double ratio=Math.min(progress/length,1);
                 return json("x",a[0]+dx*ratio,"z",a[1]+dz*ratio,"heading",-Math.atan2(dx,-dz)/(Math.PI*2),
-                    "speed",22,"limit",25,"distance",86000,"seconds",3900,"fuel",417,"fuelCapacity",640,
+                    "speed",22,"limit",25,"distance",86000,"seconds",3900,"localScale",19,"fuel",417,"fuelCapacity",640,
                     "cruise",22,"odometer",23108,"wear",.028,"gear",11,"rpm",1360,"income",21850,
-                    "cargo","Equipamentos","delivery","Centro de distribuição");
+                    "cargo","Equipamentos","cityId","demo","companyId","depot","delivery","Centro de distribuição");
             }
             progress-=length;
         }

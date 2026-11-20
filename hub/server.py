@@ -25,8 +25,8 @@ from hub.pairing import LocalPairing
 
 ASSETS = Path(__file__).resolve().parent / 'web'
 REQUIRED = ('speed', 'distance', 'seconds', 'limit', 'x', 'z', 'heading')
-NUMERIC = ('fuel', 'fuelCapacity', 'rpm', 'cruise', 'odometer', 'wear', 'gear', 'income')
-LABELS = ('truckName', 'cargo', 'origin', 'delivery')
+NUMERIC = ('localScale', 'fuel', 'fuelCapacity', 'rpm', 'cruise', 'odometer', 'wear', 'gear', 'income')
+LABELS = ('companyId', 'cityId', 'truckName', 'cargo', 'origin', 'delivery')
 MAX_MAP_BYTES = 32 * 1024 * 1024
 
 
@@ -81,6 +81,23 @@ def read_map(path):
                 not all(0 <= index < len(nodes) for index in road[:2]) or
                 road[0] == road[1] or nodes[road[0]][:2] == nodes[road[1]][:2] or road[2] not in (0, 1)):
             raise ValueError('Cada estrada deve ligar dois pontos válidos e indicar se é de mão única.')
+    lanes = data.get('lanes', [])
+    if not isinstance(lanes, list) or len(lanes) > 400_000:
+        raise ValueError('Lista de faixas inválida.')
+    for hint in lanes:
+        if (not isinstance(hint, list) or len(hint) != 4 or not all(type(v) is int for v in hint)
+                or not all(0 <= index < len(nodes) for index in hint[:2])
+                or not 1 <= hint[2] <= 8 or not 0 < hint[3] < (1 << hint[2])):
+            raise ValueError('Orientação de faixa inválida.')
+    places = data.get('places', [])
+    if not isinstance(places, list) or len(places) > 100_000:
+        raise ValueError('Lista de locais inválida.')
+    for place in places:
+        if (not isinstance(place, dict) or place.get('type') not in ('fuel', 'rest', 'service', 'company')
+                or not all(number(place.get(axis)) and abs(place[axis]) < 10_000_000 for axis in ('x', 'z'))
+                or (place['type'] == 'company' and not all(isinstance(place.get(key), str)
+                    and 0 < len(place[key]) <= 160 for key in ('city', 'company')))):
+            raise ValueError('Local de navegação inválido.')
     if 'alerts' in data:
         data['alerts'] = import_points(data['alerts'])
     payload = json.dumps(data, ensure_ascii=False, allow_nan=False, separators=(',', ':')).encode('utf-8')

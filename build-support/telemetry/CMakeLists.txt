@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 project(MaxHubTelemetry LANGUAGES CXX)
-add_library(MaxTrackHubTelemetry SHARED ../../hub/telemetry.cpp)
+add_library(MaxTrackHubTelemetry SHARED ../../hub/telemetry.cpp telemetry.def)
 target_include_directories(MaxTrackHubTelemetry PRIVATE ../../vendor/scs_sdk/include)
 target_compile_features(MaxTrackHubTelemetry PRIVATE cxx_std_17)
 target_link_libraries(MaxTrackHubTelemetry PRIVATE ws2_32)

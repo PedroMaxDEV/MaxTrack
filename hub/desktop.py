@@ -1,5 +1,6 @@
 """Desktop launcher for the Max Hub and the local Max GPS service."""
 import ctypes
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -10,6 +11,7 @@ import shutil
 import subprocess
 import sys
 import threading
+import time
 import tkinter as tk
 from tkinter import filedialog, messagebox, simpledialog, ttk
 import webbrowser
@@ -138,6 +140,8 @@ class Hub:
         self.media = None
         self.game = None
         self.generating_map = False
+        self.next_map_check = 0
+        self.checked_inputs = None
         self.closing = False
         self.checking_update = False
         self.updating = False
@@ -222,6 +226,7 @@ class Hub:
                  anchor='w', textvariable=self.pair_code).pack(fill='x', pady=(2, 0))
         self.label(gps, 'Celular e PC precisam estar na mesma rede.', 10, MUTED, '#1b2c3d').pack(fill='x')
         self.address = tk.StringVar()
+        ttk.Button(gps, text='Parear por QR', command=self.show_pair_qr).pack(anchor='w', pady=(8, 0))
         ttk.Button(gps, text='Copiar endereço para conexão manual', command=self.copy_address).pack(anchor='w', pady=(10, 0))
 
         connections = tk.Frame(page, bg=BACKGROUND)
@@ -236,6 +241,14 @@ class Hub:
         options = tk.Frame(connections, bg=BACKGROUND)
         options.pack(fill='x', pady=(7, 0))
         ttk.Button(options, text='Escolher mods .scs', command=lambda: self.generate_map(manual=True)).pack(side='left', padx=(0, 7))
+        self.auto_map = tk.BooleanVar(value=bool(self.settings.get('auto_map')))
+        def toggle_auto():
+            self.settings['auto_map'] = self.auto_map.get()
+            self.checked_inputs = None
+            self.next_map_check = 0
+            save_settings(self.settings)
+        ttk.Checkbutton(options, text='Atualizar com o perfil', variable=self.auto_map,
+                        command=toggle_auto).pack(side='left', padx=5)
         self.voice_button = ttk.Button(options, text='Testar voz no PC', command=self.test_voice)
         self.voice_button.pack(side='left')
         self.voice_state = tk.StringVar()
@@ -418,6 +431,10 @@ class Hub:
             if not self.address.get():
                 status += ' · IP de rede local indisponível'
             self.state.set(status)
+            if (connected and self.auto_map.get() and not self.generating_map
+                    and time.monotonic() >= self.next_map_check and self.licenses.allows('gps')):
+                self.next_map_check = time.monotonic() + 60
+                self.generate_map(automatic=True)
             self.root.after(800, self.check_status)
 
     def open_track(self):
@@ -434,6 +451,30 @@ class Hub:
     def open_gps(self, demo=False):
         if self.service and (demo or self.require('gps')):
             webbrowser.open(self.service.url('127.0.0.1') + ('&demo=1' if demo else ''))
+
+    def show_pair_qr(self):
+        from urllib.parse import urlsplit
+        if not self.address.get() or not self.service:
+            return
+        try:
+            import cv2
+            from PIL import Image, ImageTk
+        except ImportError:
+            messagebox.showinfo('Parear com o Max GPS', 'QR indisponível neste ambiente de desenvolvimento. '
+                                'Use Conectar no celular e o código de seis dígitos do Hub.')
+            return
+        address = urlsplit(self.address.get())
+        link = f'maxgps://parear/{address.hostname}/{address.port}?codigo={self.service.pairing.code}'
+        matrix = cv2.QRCodeEncoder_create().encode(link)
+        image = Image.fromarray(cv2.copyMakeBorder(matrix, 4, 4, 4, 4, cv2.BORDER_CONSTANT, value=255))
+        dialog = tk.Toplevel(self.root)
+        dialog.title('Parear com o Max GPS')
+        label = ttk.Label(dialog, text='Leia com a câmera do celular na mesma rede.')
+        label.pack(padx=16, pady=8)
+        photo = ImageTk.PhotoImage(image.resize((image.width*6, image.height*6), Image.Resampling.NEAREST))
+        qr = ttk.Label(dialog, image=photo)
+        qr.image = photo
+        qr.pack(padx=16, pady=8)
 
     def copy_address(self):
         if self.address.get():
@@ -512,6 +553,8 @@ class Hub:
         selected = filedialog.askopenfilename(title='Importar mapa rodoviário do Max GPS',
                                              filetypes=[('Mapa Max GPS', '*.json')])
         if selected and self.use_map(Path(selected)):
+            self.auto_map.set(False)
+            self.settings.update(auto_map=False, map_inputs=None)
             self.remember_map(Path(selected))
 
     def remember_map(self, path):
@@ -521,16 +564,20 @@ class Hub:
         except OSError as exc:
             messagebox.showwarning('Mapa do Max GPS', f'Mapa ativo nesta sessão. {exc}')
 
-    def generate_map(self, manual=False):
+    def generate_map(self, manual=False, automatic=False):
         if not self.service or self.generating_map or not self.require('gps'):
             return
         game = self.game or find_game()
         if game is None or not (game / 'base_map.scs').is_file():
+            if automatic:
+                return
             chosen = filedialog.askdirectory(title='Escolha a pasta do ETS2 que contém base_map.scs')
             if not chosen:
                 return
             game = Path(chosen)
         game_docs = documents_game()
+        fingerprint = None
+        expected_module = None
         if manual:
             selected = filedialog.askopenfilenames(title='Selecione os pacotes do mapa e suas dependências',
                                                    initialdir=game_docs / 'mod',
@@ -541,8 +588,29 @@ class Hub:
         else:
             try:
                 mods, missing = map_builder.active_mods(game_docs, game)
+                log = game_docs / 'game.log.txt'
+                if log.exists():
+                    modules = re.findall(r"Map '/map/([^/']+)\.mbd' loading started", log.read_text(
+                        encoding='utf-8-sig', errors='replace'), re.IGNORECASE)
+                    expected_module = modules[-1] if modules else None
+                if automatic and (not expected_module or missing):
+                    return
+                inputs = []
+                for path in [*sorted(game.glob('*.scs')), *mods]:
+                    entries = sorted(path.rglob('*')) if path.is_dir() else [path]
+                    for entry in entries:
+                        stat = entry.stat()
+                        inputs.append((str(entry), stat.st_size, stat.st_mtime_ns))
+                fingerprint = hashlib.sha256(repr((expected_module, inputs)).encode()).hexdigest()
+                if automatic and (fingerprint == self.checked_inputs or
+                                  (fingerprint == self.settings.get('map_inputs') and self.service.telemetry.map_state()[1])):
+                    return
+                self.checked_inputs = fingerprint
+                if automatic and fingerprint != self.settings.get('map_inputs'):
+                    self.service.telemetry.set_map(None)
             except OSError as exc:
-                messagebox.showerror('Mapa do Max GPS', f'Não foi possível ler o log do ETS2. {exc}')
+                if not automatic:
+                    messagebox.showerror('Mapa do Max GPS', f'Não foi possível ler o log do ETS2. {exc}')
                 return
             if missing:
                 messagebox.showerror('Mapa do Max GPS', 'Um pacote ativo do último perfil não foi encontrado.\n' +
@@ -557,7 +625,7 @@ class Hub:
         def run():
             try:
                 path = map_builder.build(game, mods, DATA_DIR / 'map-builder', progress,
-                                         APP_DIR / 'map-tools' / 'map-builder.zip')
+                                         APP_DIR / 'map-tools' / 'map-builder.zip', expected_module)
                 self.root.after(0, finish, path, '')
             except (OSError, ValueError, KeyError, TypeError, subprocess.SubprocessError) as exc:
                 self.root.after(0, finish, None, str(exc))
@@ -567,8 +635,12 @@ class Hub:
             self.generate_button.configure(state='normal')
             if error:
                 self.map_label.set('Geração do mapa interrompida. O mapa ativo foi mantido.')
-                messagebox.showerror('Mapa do Max GPS', error)
+                if automatic:
+                    self.map_label.set(error)
+                else:
+                    messagebox.showerror('Mapa do Max GPS', error)
             elif self.use_map(path):
+                self.settings['map_inputs'] = fingerprint
                 self.remember_map(path)
 
         threading.Thread(target=run, daemon=True).start()

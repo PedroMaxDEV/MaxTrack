@@ -2,6 +2,8 @@ package com.maxhub.gps;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.graphics.Matrix;
+import android.graphics.Rect;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
@@ -30,7 +32,25 @@ final class MapView extends View {
     JSONArray hazards=new JSONArray();
     private JSONObject truck;
     private double cx,cz;
-    private float zoom;
+    private float zoom, bearing, touchAngle;
+    private boolean tilted=true;
+    private final Matrix viewMatrix=new Matrix(), inverse=new Matrix();
+    private final Rect clip=new Rect();
+    private final Matrix perspective=new Matrix();
+
+    void tilt() { tilted=!tilted; invalidate(); }
+
+    private void projection() {
+        float ax=getWidth()*.5f, ay=getHeight()*.58f;
+        viewMatrix.setTranslate(-ax,-ay);
+        viewMatrix.postRotate(bearing);
+        if (tilted && getHeight()>0) {
+            perspective.setValues(new float[]{1,0,0, 0,.78f,0, 0,-.55f/getHeight(),1});
+            viewMatrix.postConcat(perspective);
+        }
+        viewMatrix.postTranslate(ax,ay);
+        viewMatrix.invert(inverse);
+    }
     private boolean follow=true;
     boolean selecting=false;
 
@@ -44,12 +64,18 @@ final class MapView extends View {
             @Override public boolean onDown(MotionEvent motion) { return true; }
             @Override public boolean onScroll(MotionEvent start,MotionEvent end,float dx,float dy) {
                 if (!pinch.isInProgress() && end.getPointerCount()==1) {
-                    follow=false;cx+=dx/zoom;cz+=dy/zoom;invalidate();
+                    projection();
+                    float[] point={end.getX(),end.getY(),end.getX()+dx,end.getY()+dy};
+                    inverse.mapPoints(point);
+                    follow=false;cx+=(point[2]-point[0])/zoom;cz+=(point[3]-point[1])/zoom;invalidate();
                 }
                 return true;
             }
             @Override public boolean onSingleTapUp(MotionEvent event) {
-                if (selecting) onPin.choose(cx+(event.getX()-getWidth()*.5)/zoom,cz+(event.getY()-getHeight()*.58)/zoom);
+                if (selecting) {
+                    projection(); float[] point={event.getX(),event.getY()}; inverse.mapPoints(point);
+                    onPin.choose(cx+(point[0]-getWidth()*.5)/zoom,cz+(point[1]-getHeight()*.58)/zoom);
+                }
                 performClick();
                 return true;
             }
@@ -63,6 +89,13 @@ final class MapView extends View {
     }
 
     @Override public boolean onTouchEvent(MotionEvent event) {
+        if (event.getPointerCount()==2) {
+            float angle=(float)Math.toDegrees(Math.atan2(event.getY(1)-event.getY(),event.getX(1)-event.getX()));
+            if(event.getActionMasked()==MotionEvent.ACTION_MOVE) {
+                follow=false; bearing+=angle-touchAngle; invalidate();
+            }
+            touchAngle=angle;
+        }
         pinch.onTouchEvent(event);
         gestures.onTouchEvent(event);
         return true;
@@ -100,7 +133,7 @@ final class MapView extends View {
                 if (trail.size()>=350) trail.removeFirst();
                 trail.addLast(new double[]{x,z});
             }
-            if (follow) { cx=x;cz=z; }
+            if (follow) { cx=x;cz=z;bearing=(float)truck.optDouble("heading",0)*360; }
         }
         invalidate();
     }
@@ -112,23 +145,29 @@ final class MapView extends View {
 
     @Override protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        canvas.drawColor(0xff172635);
-        float tile=56*density;
-        ink(0xff203447);
-        paint.setStrokeWidth(1);
-        for (float x=sx(0)%tile;x<getWidth();x+=tile) canvas.drawLine(x,0,x,getHeight(),paint);
-        for (float y=sy(0)%tile;y<getHeight();y+=tile) canvas.drawLine(0,y,getWidth(),y,paint);
-
+        canvas.drawColor(0xff252d39);
+        canvas.save();
+        projection();canvas.concat(viewMatrix);canvas.getClipBounds(clip);
         if (map!=null) {
             path.reset();
-            int width=getWidth(), height=getHeight();
+
             for (int i=0;i<map.from.length;i++) {
                 int a=map.from[i],b=map.to[i];
                 float x1=sx(map.x[a]),y1=sy(map.z[a]),x2=sx(map.x[b]),y2=sy(map.z[b]);
-                if ((x1<0 && x2<0) || (y1<0 && y2<0) || (x1>width && x2>width) || (y1>height && y2>height)) continue;
+                if ((x1<clip.left && x2<clip.left) || (y1<clip.top && y2<clip.top) || (x1>clip.right && x2>clip.right) || (y1>clip.bottom && y2>clip.bottom)) continue;
                 path.moveTo(x1,y1);path.lineTo(x2,y2);
             }
-            stroke(canvas,0xff536f89,3);
+            stroke(canvas,0xff476580,5);
+            for (RoadMap.Place place:map.places) {
+                if (place.type.equals("company")) continue;
+                float px=sx(place.x),py=sy(place.z);
+                if (!clip.contains((int)px,(int)py)) continue;
+                canvas.save(); canvas.translate(px,py);canvas.rotate(-bearing);
+                ink(0xff296a57);canvas.drawRoundRect(-10*density,-8*density,10*density,8*density,3*density,3*density,paint);
+                ink(Color.WHITE); paint.setTextSize(10*density);paint.setTextAlign(Paint.Align.CENTER);
+                canvas.drawText(place.type.equals("fuel")?"P":place.type.equals("rest")?"Z":"OF",0,3*density,paint);
+                canvas.restore();
+            }
         }
         path.reset();
         boolean first=true;
@@ -144,7 +183,7 @@ final class MapView extends View {
                 float x=sx(map.x[node]), y=sy(map.z[node]);
                 if (i==0) path.moveTo(x,y); else path.lineTo(x,y);
             }
-            stroke(canvas,0xff102637,10);stroke(canvas,0xff64eadc,5);
+            stroke(canvas,0xff102637,10);stroke(canvas,0xff18dffa,7);
             ink(0xffc8fff7);
             for(int stop:stops) canvas.drawCircle(sx(map.x[stop]),sy(map.z[stop]),6*density,paint);
         }
@@ -152,7 +191,7 @@ final class MapView extends View {
             JSONObject marker=hazards.optJSONObject(i);
             if(marker==null) continue;
             float x=sx(marker.optDouble("x")),y=sy(marker.optDouble("z"));
-            if(x<0 || x>getWidth() || y<0 || y>getHeight()) continue;
+            if(!clip.contains((int)x,(int)y)) continue;
             ink(0xffffc676);
             canvas.drawCircle(x,y,10*density,paint);
             ink(0xff352213);paint.setTextAlign(Paint.Align.CENTER);paint.setTextSize(10*density);
@@ -164,13 +203,14 @@ final class MapView extends View {
             canvas.translate(sx(truck.optDouble("x")),sy(truck.optDouble("z")));
             canvas.rotate((float)-truck.optDouble("heading")*360);
             canvas.scale(density,density);
-            ink(0xff10657d);
+            ink(0xff046bc9);
             canvas.drawCircle(0,0,20,paint);
             path.reset();path.moveTo(0,-13);path.lineTo(10,10);path.lineTo(0,6);path.lineTo(-10,10);path.close();
             ink(Color.WHITE);
             canvas.drawPath(path,paint);
             canvas.restore();
         }
+        canvas.restore();
     }
 
     private void stroke(Canvas canvas,int color,float width) {

@@ -12,6 +12,17 @@ import java.util.PriorityQueue;
 
 final class RoadMap {
     final String name;
+    final java.util.HashMap<Long,String> lanes=new java.util.HashMap<>();
+    static long edgeKey(int a,int b) {return ((long)a<<32) | (b & 0xffffffffL);}
+    final List<Place> places = new ArrayList<>();
+    static final class Place {
+        final String type, city, company;
+        final double x, z;
+        Place(JSONObject data) throws JSONException {
+            type=data.getString("type"); city=data.optString("city"); company=data.optString("company");
+            x=data.getDouble("x"); z=data.getDouble("z");
+        }
+    }
     final double[] x, z;
     final int[] from, to;
     final int[][] links;
@@ -23,6 +34,23 @@ final class RoadMap {
         int count = nodes.length();
         if (count < 2 || count > 200000 || roads.length() < 1 || roads.length() > 400000)
             throw new JSONException("Tamanho do mapa inválido");
+        JSONArray guidance=json.optJSONArray("lanes");
+        if(guidance!=null){
+            if(guidance.length()>400000) throw new JSONException("Excesso de indicações de faixa");
+            for(int i=0;i<guidance.length();i++){
+                JSONArray hint=guidance.getJSONArray(i);
+                int total=hint.getInt(2),mask=hint.getInt(3);
+                if(total<1 || total>8 || mask<=0 || mask>=(1<<total)) throw new JSONException("Faixas inválidas");
+                StringBuilder label=new StringBuilder("Faixas  ");
+                for(int j=0;j<total;j++)label.append((mask&(1<<j))!=0?"▲ ":"· ");
+                lanes.put(edgeKey(hint.getInt(0),hint.getInt(1)),label.toString());
+            }
+        }
+        JSONArray locations=json.optJSONArray("places");
+        if (locations!=null) {
+            if (locations.length()>100000) throw new JSONException("Excesso de locais no mapa");
+            for (int i=0;i<locations.length();i++) places.add(new Place(locations.getJSONObject(i)));
+        }
         x = new double[count];
         z = new double[count];
         int[] sizes = new int[count];
@@ -134,9 +162,9 @@ final class RoadMap {
                 double ox=map.x[c]-map.x[b], oz=map.z[c]-map.z[b];
                 double angle=Math.atan2(ix*oz-iz*ox,ix*ox+iz*oz);
                 if (Math.abs(angle)>.60)
-                    steps.add(new Step(cumulative[i],angle>0 ? "Vire à direita" : "Vire à esquerda",angle>0 ? "↱" : "↰"));
+                    steps.add(new Step(cumulative[i],angle>0?VoiceCue.RIGHT:VoiceCue.LEFT,angle>0 ? "Vire à direita" : "Vire à esquerda",angle>0 ? "↱" : "↰"));
             }
-            steps.add(new Step(cumulative[cumulative.length-1],"Destino à frente","⚑"));
+            steps.add(new Step(cumulative[cumulative.length-1],VoiceCue.DESTINATION,"Destino à frente","⚑"));
         }
 
         boolean advance(RoadMap map,double x,double z) {
@@ -160,6 +188,7 @@ final class RoadMap {
     static final class Step {
         final double at;
         final String text, glyph;
-        Step(double at, String text, String glyph) { this.at=at;this.text=text;this.glyph=glyph; }
+        final VoiceCue cue;
+        Step(double at, VoiceCue cue, String text, String glyph) { this.at=at;this.cue=cue;this.text=text;this.glyph=glyph; }
     }
 }
