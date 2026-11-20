@@ -1,0 +1,9 @@
+node_modules/
+.firebase/
+.firebaserc
+.env*
+.secret.local
+*.pem
+*-debug.log
+public/downloads/
+functions/private/MaxGPS-Android.apk

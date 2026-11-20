@@ -1,0 +1,8 @@
+CORRECAO DO ERRO "No runtime installed that matches 3.11"
+
+O instalador anterior exigia Python 3.11 e continuava mesmo apos falhar.
+Este instalador tenta localizar Python 3.11 64 bits e instalar pelo gerenciador Python (quando disponivel).
+Se a instalacao automatica nao funcionar, instale Python 3.11 64 bits manualmente e execute INSTALAR.bat novamente.
+
+Atenção: o OpenTrack deve ser instalado e configurado separadamente.
+A v0.9 e experimental e nao foi validada em webcam real ou ETS2.

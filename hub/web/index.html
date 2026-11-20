@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d141a">
+<title>Max GPS · Max Hub</title>
+<link rel="stylesheet" href="/style.css">
+<script src="/app.js" defer></script>
+<script src="/media.js" defer></script>
+</head>
+<body>
+<main>
+  <header>
+    <div><p class="brand">MAX HUB</p><h1>Max GPS</h1></div>
+    <div class="connection"><span id="status" role="status">Aguardando conexão</span><button id="connect" hidden>Conectar PC</button></div>
+  </header>
+  <nav class="view-tabs" aria-label="Serviços">
+    <button id="tab-gps" aria-pressed="true">Max GPS</button>
+    <button id="tab-media" aria-pressed="false">Multimídia</button>
+  </nav>
+  <div id="gps-view">
+  <div class="dashboard">
+    <section class="map" aria-label="Mapa">
+      <canvas id="map" aria-label="Mapa com posição e trajeto do caminhão"></canvas>
+      <div class="map-top"><span id="map-name">Percurso ao vivo</span><span id="compass">N ↑</span></div>
+      <div id="road-alert" class="road-alert" role="status" hidden></div>
+      <div class="map-controls"><button id="zoom-in" aria-label="Ampliar">+</button><button id="zoom-out" aria-label="Reduzir">−</button><button id="center" aria-label="Centralizar">⌖</button></div>
+      <div class="map-bottom"><b id="instruction">Aguardando o caminhão</b><span id="map-help">Abra o ETS2 no computador e entre na cabine.</span></div>
+    </section>
+    <aside>
+      <section class="instruments" aria-label="Telemetria">
+        <div class="speed"><div><span id="speed">—</span> <small>km/h</small></div><div class="limit" aria-label="Limite de velocidade" id="limit">—</div></div>
+        <div class="stats">
+          <div><span id="distance">—</span><small>Distância restante</small></div>
+          <div><span id="eta">—</span><small>Tempo restante</small></div>
+          <div><span id="fuel">—</span><small>Combustível</small></div>
+          <div><span id="gear">—</span><small>Marcha · rotação</small></div>
+          <div><span id="cruise">—</span><small>Piloto automático</small></div>
+          <div><span id="wear">—</span><small>Desgaste do motor</small></div>
+        </div>
+      </section>
+      <section class="job">
+        <h2>Viagem</h2><strong id="destination">Sem entrega ativa</strong><p id="cargo">—</p><p id="truck">—</p>
+      </section>
+    </aside>
+  </div>
+  <section class="settings">
+    <div class="toolbar">
+      <button id="demo">Testar demonstração</button><button id="clear" disabled>Limpar rota</button>
+      <button id="stop-selection" disabled>Escolher destino no mapa</button>
+    </div>
+    <details>
+      <summary>Alertas de estrada</summary>
+      <div class="alert-settings">
+        <label><input id="include-alerts" type="checkbox" checked> Avisar sobre pontos cadastrados</label>
+        <div class="toolbar">
+          <select id="alert-type" aria-label="Tipo de alerta"><option value="radar">Radar</option><option value="police">Fiscalização</option><option value="bump">Quebra-molas</option></select>
+          <button id="mark-alert" disabled>Marcar posição atual</button>
+        </div>
+        <small id="alert-scope">As marcações usam as coordenadas do mapa em uso.</small>
+        <div id="alert-feedback" role="status"></div>
+        <ul id="saved-alerts" aria-label="Marcações pessoais"></ul>
+      </div>
+    </details>
+    <details>
+      <summary>Voz e saída de áudio</summary>
+      <div class="voice">
+        <label>Saída<select id="voice-output"><option value="off">Silencioso</option><option value="local">Neste dispositivo</option><option value="pc">No PC do Hub</option></select></label>
+        <label>Voz<select id="voice-name"><option value="">Padrão</option></select></label>
+        <label>Velocidade <input id="voice-rate" type="range" min=".6" max="1.5" value="1" step=".1"></label>
+        <label>Tom <input id="voice-pitch" type="range" min=".6" max="1.5" value="1" step=".1"></label>
+        <button id="test-voice">Testar voz</button>
+      </div>
+      <p id="voice-feedback" role="status"></p>
+    </details>
+  </section>
+  </div>
+  <section id="media-view" class="media-tablet" hidden>
+    <aside class="media-rail" aria-label="Tablet do PC">
+      <strong>MAX<span> MULTIMÍDIA</span></strong>
+      <button data-media="trip">Viagem</button><button data-media="apps">Apps</button><button data-media="expand">Expandir / reduzir</button>
+    </aside>
+    <div class="media-content">
+      <div class="media-title"><div><h2>Tablet da cabine</h2><p>Controle do PC pela rede local</p></div><button id="media-mic" hidden>Falar</button></div>
+      <div class="media-apps">
+        <button data-app="youtube"><b class="yt">▶</b>YouTube</button>
+        <button data-app="music"><b class="music">♪</b>YouTube Music</button>
+        <button data-app="spotify"><b class="spotify">♫</b>Spotify</button>
+        <button data-app="instagram"><b class="instagram">◎</b>Instagram</button>
+      </div>
+      <form id="media-search" class="media-form"><label for="media-query">Buscar vídeos</label><input id="media-query" maxlength="100" placeholder="Artista ou nome do vídeo" required><button>Buscar</button></form>
+      <ol id="media-results" class="media-results" aria-label="Resultados do YouTube"></ol>
+      <div class="media-controls" aria-label="Controles do Windows">
+        <button data-media="previous" aria-label="Anterior">⏮</button><button data-media="playpause" aria-label="Tocar ou pausar">⏯</button><button data-media="next" aria-label="Próxima">⏭</button>
+        <button data-media="volumedown" aria-label="Diminuir volume">−</button><button data-media="volumeup" aria-label="Aumentar volume">+</button><button data-media="mute" aria-label="Silenciar">🔇</button>
+      </div>
+      <p id="media-status" role="status">Abra o Max Hub no PC para conectar.</p>
+    </div>
+  </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,113 @@
+MAX HUB PARA EURO TRUCK SIMULATOR 2
+
+EDIÇÃO COMERCIAL
+No Hub, clique em Ativar com chave e cole a chave de Minha conta na loja.
+O Hub consulta novas versões. Quando aparecer uma atualização, feche o
+ETS2 e o MaxTrack antes de aplicar. Para instalar o Max GPS no Android,
+baixe o APK pela conta com Max GPS ou Combo ativo.
+
+WINDOWS
+1. Execute MaxHub-Setup.exe e abra Max Hub no menu Iniciar.
+2. Com o ETS2 fechado, clique em Instalar telemetria. O Hub procura a
+   instalação da Steam. Se a pasta exigir acesso elevado, aceite o
+   aviso do Windows. Abra o ETS2 e entre na cabine.
+3. Clique em Abrir GPS no PC. Mantenha o Hub aberto durante a sessão.
+   MaxTrack Pro e Max Multimídia também abrem pelo Hub.
+
+MAXTRACK PRO · CABINE IMERSIVA
+Com o ETS2 e o MaxTrack fechados, clique em Configurar todos os perfis
+no Hub. Isso atualiza a ponte SCS e os controles dos perfis existentes.
+No MaxTrack, marque Modo Cabine imersiva na aba Movimento. Use a ponte
+direta SCS para os deslocamentos para frente e para os lados. Na cabine,
+olhe para a frente na sua posição normal e pressione F10. Vire a cabeça
+de leve para ver os espelhos. Aproxime a cabeça e vire para a esquerda
+ou para a direita para ampliar o giro dentro da cabine. A vista volta
+suavemente conforme você retorna à posição normal.
+O instalador atualiza os controles existentes e ativa g_trackir quando
+essa opção já existe no config.cfg. Ele guarda cópias dos arquivos alterados.
+
+ANDROID
+1. Instale MaxGPS-Android.apk. Este APK usa assinatura de desenvolvimento.
+2. Conecte o PC e o celular à mesma rede local. Se o Windows perguntar
+   sobre o firewall, permita o Hub na rede privada.
+3. No Max GPS, toque em Conectar, selecione o computador encontrado e
+   digite o código de seis dígitos do Hub. Se a rede bloquear a descoberta
+   UDP, use o endereço mostrado em Conexão manual.
+4. Em Ajustes, selecione Celular ou PC do Hub como saída de áudio.
+   O Hub inclui a voz Faber em português do Brasil, disponível mesmo
+   em computadores sem o pacote de fala do Windows.
+   Tom e velocidade podem ser ajustados no celular. No PC, ajuste a
+   voz e a velocidade. Use Testar voz para conferir a saída e ler o
+   resultado do teste. Se o Android não tiver voz em português, o app
+   pode usar a voz gerada pelo Hub e reproduzi-la no celular. No PC,
+   use Testar voz no PC para testar sem abrir o jogo ou o aplicativo.
+
+MAPA E ROTAS
+A posição, a trilha percorrida e a telemetria usam as coordenadas do
+jogo. A distância e o tempo restantes vêm do Route Advisor do ETS2.
+Para gerar o mapa, carregue o perfil desejado no ETS2 e feche o jogo.
+No Hub, clique em Gerar mapa do ETS2. Ele lê os pacotes montados no
+último perfil e o mapa do jogo usando o extrator Truck Dash incluído
+no instalador do Hub. A geração funciona sem internet.
+Se precisar apontar os pacotes manualmente, use Escolher mods .scs.
+O Android baixa o mapa ativo pela rede local e mostra o progresso ou
+o erro na aba Mapa. O mapa é guardado no dispositivo após a transferência.
+Toque em Destino e escolha uma estrada. Use + Parada para incluir um
+ponto intermediário antes da chegada.
+Quando a rota sai do trecho importado, escolha o destino novamente.
+A rota do Max GPS tem destino próprio e não altera a rota do jogo.
+
+Importar JSON também aceita um mapa Max GPS v1 ou um grafo JSON
+exportado pelo Truck Dash. O roteamento usa a rede terrestre e as
+direções disponíveis no grafo. O exemplo tem coordenadas fictícias.
+
+    {"version":1,"name":"Exemplo","nodes":[[0,0],[0,-100],[100,-100]],
+     "roads":[[0,1,0],[1,2,1]]}
+
+Cada estrada liga os índices de dois pontos. O último valor é 0 para
+dois sentidos e 1 para mão única, do primeiro índice ao segundo.
+Interseções usam o mesmo índice somente quando existe ligação entre
+os trechos. O modo Testar demonstração traz um circuito para testar
+mapa, destino e interface com o jogo fechado.
+
+ALERTAS DE ESTRADA
+Em Alertas de estrada, escolha Radar, Fiscalização ou Quebra-molas e
+use Marcar posição atual quando estiver no ponto, com o caminhão
+parado em segurança. A marcação é salva no PC para aquele sentido.
+Ao passar de novo, o painel avisa quando o ponto está à frente. Para
+ouvir o aviso, escolha a saída em Voz e saída de áudio.
+
+Um mapa Max GPS v1 também pode incluir até 500 alertas preexistentes.
+Exemplo de campo a adicionar ao JSON do mapa:
+
+    "alerts":[{"type":"radar","x":100,"z":-150,"heading":0}]
+
+Tipos aceitos: radar, police e bump. Heading é opcional e usa voltas
+do SDK; com o campo omitido, o ponto vale para ambos os sentidos.
+Cada mapa importado tem sua lista pessoal. Sem mapa importado, as
+marcações ficam numa lista comum. O Max GPS avisa sobre os pontos
+cadastrados, sem acompanhar a posição de viaturas móveis.
+O modo demonstração mostra exemplos de alerta sem alterar marcações.
+
+MULTIMÍDIA
+Abra Max Multimídia no PC. Use o ETS2 em modo janela sem borda.
+O tablet flutuante pode ser arrastado e redimensionado. Expandir maximiza
+no monitor atual. F8 alterna entre interagir com o tablet e passar os
+cliques ao jogo. A integração gráfica na cabine e o monitor virtual
+continuam pendentes.
+
+No Android, abra a aba Multimídia para alternar Viagem e Apps, expandir
+o tablet e controlar a reprodução e o volume do Windows. Os serviços
+abrem no navegador do PC, que pode receber o foco ao abrir.
+
+Toque em Falar e diga, por exemplo, “Ok Max, abra o YouTube e coloque
+Natanzinho Lima”. O app usa o reconhecimento de voz do Android quando
+você toca no botão. Para ver resultados numerados, configure a chave
+do YouTube Data API v3 em Apps > API do YouTube no PC. Depois toque em
+Falar novamente e diga “coloca o primeiro”. Com a busca básica, os
+resultados abrem diretamente no navegador do PC.
+
+Use as portas 8765/TCP e 8766/UDP na rede local. Compartilhe o endereço de
+pareamento com os dispositivos que você usa. A ativação da edição
+comercial é feita pela internet. Durante o uso, o GPS e a Multimídia
+se comunicam pela sua rede local.

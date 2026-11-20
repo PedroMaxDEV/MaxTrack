@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Max Hub reúne rastreamento de cabeça, GPS no celular e multimídia para Euro Truck Simulator 2.">
+  <meta name="theme-color" content="#111e2d">
+  <title>Max Hub — Sua cabine no ETS2</title>
+  <link rel="icon" href="/assets/marca.png" type="image/png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="preload" href="/assets/estrada-max-hub.jpg" as="image">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/store.js"></script>
+</head>
+<body>
+  <a class="skip" href="#inicio">Pular para o conteúdo</a>
+  <header class="site-header">
+    <div class="frame header-inner">
+      <a class="wordmark" href="#inicio" aria-label="Max Hub, início">
+        <img src="/assets/marca.png" alt="" width="34" height="34">
+        <span>MAX<span class="hub-word">HUB</span></span>
+      </a>
+      <nav class="site-nav" aria-label="Navegação">
+        <a href="#produtos">Produtos</a>
+        <a href="#instalacao">Instalação</a>
+        <a href="#perguntas">Perguntas</a>
+      </nav>
+      <button type="button" class="btn btn-outline account-button" id="account-button">Minha conta <span aria-hidden="true">↗</span></button>
+    </div>
+  </header>
+  <main id="inicio">
+    <section class="hero" aria-labelledby="hero-title">
+      <div class="frame hero-inner">
+        <div class="hero-copy">
+          <p class="eyebrow"><span></span> Euro Truck Simulator 2</p>
+          <h1 id="hero-title">Sua cabine,<br><em>do seu jeito.</em></h1>
+          <p>Olhe para os espelhos com a webcam, acompanhe o GPS no celular e controle a mídia. Tudo pelo Max Hub.</p>
+          <div class="hero-actions">
+            <a class="btn btn-accent" href="#combo">Conhecer o Combo <span aria-hidden="true">↘</span></a>
+            <button type="button" class="btn btn-ghost" data-download="windows">Baixar para Windows <span aria-hidden="true">↓</span></button>
+          </div>
+          <p class="download-note" role="status" id="windows-status"></p>
+        </div>
+        <span class="hero-platform">WINDOWS <span></span> ANDROID</span>
+      </div>
+    </section>
+    <div class="offer-strip">
+      <div class="frame offer-inner">
+        <p id="offer-note"><strong>Oferta de primeira compra</strong> <span>Combo Max Hub por <b data-price="intro">R$ 59,90</b></span></p>
+        <span id="buyer-count" hidden></span>
+        <a href="#combo">Ver condições <span aria-hidden="true">↗</span></a>
+      </div>
+    </div>
+    <section class="frame products-section" id="produtos" aria-labelledby="products-title">
+      <div class="section-intro">
+        <h2 id="products-title">Monte a sua cabine.</h2>
+        <p>Escolha um produto ou leve os três com uma única chave. Pagamento único.</p>
+      </div>
+      <article class="combo" id="combo" aria-labelledby="combo-title">
+        <div class="combo-copy">
+          <div class="combo-badge"><span aria-hidden="true">✦</span> Melhor custo-benefício</div>
+          <h3 id="combo-title">Combo Max Hub</h3>
+          <p>Rastreamento de cabeça, navegação e multimídia no mesmo pacote.</p>
+          <ul class="combo-list">
+            <li><span aria-hidden="true">✓</span> MaxTrack Pro</li>
+            <li><span aria-hidden="true">✓</span> Max GPS para Windows e Android</li>
+            <li><span aria-hidden="true">✓</span> Max Multimídia</li>
+          </ul>
+        </div>
+        <div class="combo-buy">
+          <p class="price-label" id="combo-price-label">Primeira compra</p>
+          <p class="combo-price"><strong id="featured-price">R$ 59,90</strong><span id="combo-regular">Preço normal <span data-price="combo">R$ 69,90</span></span></p>
+          <p class="savings" id="combo-savings">Economize R$ 34,80 comprando os três juntos na primeira compra.</p>
+          <button type="button" class="btn btn-accent" data-buy="combo">Comprar o Combo <span aria-hidden="true">↗</span></button>
+          <p class="price-footnote">Condição confirmada na conta antes do pagamento pelo Mercado Pago.</p>
+        </div>
+      </article>
+      <div class="product-grid">
+        <article class="product">
+          <div class="product-top"><span class="tool-icon" aria-hidden="true">⌖</span><span>WEBCAM · WINDOWS</span></div>
+          <h3>MaxTrack Pro</h3>
+          <p>Vire a cabeça para olhar pelos espelhos e pelas janelas, com suavização e ajustes de sensibilidade.</p>
+          <ul><li>Modo Cabine imersiva</li><li>Limite de FPS da webcam</li><li>Calibração pelo teclado</li></ul>
+          <div class="product-buy"><strong data-price="track">R$ 39,90</strong><button type="button" class="btn btn-card" data-buy="track">Comprar <span aria-hidden="true">↗</span></button></div>
+        </article>
+        <article class="product">
+          <div class="product-top"><span class="tool-icon" aria-hidden="true">↱</span><span>WINDOWS · ANDROID</span></div>
+          <h3>Max GPS</h3>
+          <p>Veja a posição do caminhão e os dados da viagem pela rede local. Gere rotas pelo mapa importado e ouça avisos de voz.</p>
+          <ul><li>Mapa de mods compatíveis via Hub</li><li>Narração no PC ou celular</li><li>APK disponível na sua conta</li></ul>
+          <div class="product-buy"><strong data-price="gps">R$ 29,90</strong><button type="button" class="btn btn-card" data-buy="gps">Comprar <span aria-hidden="true">↗</span></button></div>
+        </article>
+        <article class="product">
+          <div class="product-top"><span class="tool-icon" aria-hidden="true">▶</span><span>WINDOWS · CONTROLE NO CELULAR</span></div>
+          <h3>Max Multimídia</h3>
+          <p>Use um painel sobre o jogo em modo janela sem bordas e controle a reprodução pelo celular.</p>
+          <ul><li>Painel redimensionável</li><li>Atalhos para serviços de mídia</li><li>Controle no Android com Max GPS ou Combo</li></ul>
+          <div class="product-buy"><strong data-price="media">R$ 24,90</strong><button type="button" class="btn btn-card" data-buy="media">Comprar <span aria-hidden="true">↗</span></button></div>
+        </article>
+      </div>
+    </section>
+    <section class="setup-section" id="instalacao" aria-labelledby="setup-title">
+      <div class="frame setup-inner">
+        <div><h2 id="setup-title">Do download<br>à cabine.</h2><p>Use o Hub para instalar integrações nos perfis do ETS2 e conferir as versões disponíveis.</p></div>
+        <ol class="setup-steps">
+          <li><div><h3>Baixe o Max Hub</h3><p>Instale o aplicativo no PC com o ETS2 fechado.</p><button type="button" class="inline-action" data-download="windows">Baixar para Windows ↓</button></div></li>
+          <li><div><h3>Ative a sua chave</h3><p>Após a confirmação do pagamento, copie a chave em Minha conta e cole no Hub.</p></div></li>
+          <li><div><h3>Conecte o Android</h3><p>Com Max GPS ou Combo ativo, baixe o APK em Minha conta e pareie o celular e o PC na mesma rede.</p><button type="button" class="inline-action" data-open-account>Ir para Minha conta ↗</button></div></li>
+        </ol>
+      </div>
+    </section>
+    <section class="frame faq-section" id="perguntas" aria-labelledby="faq-title">
+      <div><h2 id="faq-title">Perguntas<br>frequentes.</h2></div>
+      <div class="questions">
+        <details><summary>Como funciona a oferta de primeira compra?</summary><p>A conta Google sem compras confirmadas pode ter acesso ao preço de primeira compra do Combo. O valor final é confirmado antes de abrir o checkout.</p></details>
+        <details><summary>O mapa do meu mod funciona no Max GPS?</summary><p>O Hub lê os arquivos do ETS2 e dos mods compatíveis para gerar o mapa. A telemetria do jogo informa posição, velocidade, distância, previsão de chegada e limite da via. As estradas e rotas do Max GPS dependem do mapa que o Hub conseguiu importar.</p></details>
+        <details><summary>O painel multimídia aparece dentro da cabine?</summary><p>A versão atual exibe o painel por cima do jogo em modo janela sem bordas. A integração gráfica com o painel 3D da cabine ainda está em desenvolvimento.</p></details>
+        <details><summary>Como recebo as atualizações?</summary><p>O Hub consulta a versão disponível e oferece a atualização pelo próprio aplicativo. O APK do Max GPS fica na área da sua conta.</p></details>
+      </div>
+    </section>
+  </main>
+  <footer class="site-footer">
+    <div class="frame footer-inner">
+      <a class="wordmark" href="#inicio"><img src="/assets/marca.png" alt="" width="28" height="28"><span>MAX<span class="hub-word">HUB</span></span></a>
+      <p>Produtos independentes para Euro Truck Simulator 2.</p>
+      <button type="button" class="inline-action" data-open-account>Minha conta ↗</button>
+    </div>
+  </footer>
+  <dialog id="account-dialog" aria-labelledby="account-title">
+    <div class="dialog-panel">
+      <div class="dialog-header">
+        <div><p class="account-eyebrow">SEU ESPAÇO MAX HUB</p><h2 id="account-title">Bem-vindo à cabine.</h2><p id="account-identity">Entre para acompanhar seus produtos e suas compras.</p></div>
+        <button type="button" class="dialog-close" aria-label="Fechar minha conta" id="close-account">×</button>
+      </div>
+      <p id="account-message" class="account-message" role="status"></p>
+      <section id="login-panel">
+        <p class="login-intro" id="login-intro">Seus produtos, downloads e pedidos em um só lugar.</p>
+        <button type="button" class="btn btn-dense" id="google-login"><span class="google-g" aria-hidden="true">G</span> Entrar com Google</button>
+      </section>
+      <section id="customer-panel" hidden>
+        <div class="account-tools">
+          <button type="button" class="btn btn-card" id="refresh-account">Atualizar conta</button>
+          <button type="button" class="btn btn-card" id="logout">Sair</button>
+        </div>
+        <div id="checkout-panel" class="dialog-section checkout-panel" hidden>
+          <p class="account-eyebrow">CONTA CONECTADA · PRÓXIMO PASSO, PAGAMENTO</p>
+          <h3 id="checkout-title">Confirmar compra</h3>
+          <p id="checkout-copy"></p>
+          <p>Escolha Pix, cartão ou boleto no checkout, conforme disponibilidade. Você pode pagar como convidado. O Pix pode ser pago pelo aplicativo do seu banco.</p>
+          <button type="button" class="btn btn-dense" id="confirm-checkout">Escolher forma de pagamento ↗</button>
+          <button type="button" class="inline-action" id="cancel-checkout">Voltar para minha conta</button>
+        </div>
+        <nav class="account-nav" aria-label="Área do cliente" role="tablist">
+          <button type="button" role="tab" id="tab-overview" aria-controls="panel-overview" aria-selected="true" data-account-tab="overview">Visão geral</button>
+          <button type="button" role="tab" id="tab-products" aria-controls="panel-products" aria-selected="false" tabindex="-1" data-account-tab="products">Meus produtos</button>
+          <button type="button" role="tab" id="tab-orders" aria-controls="panel-orders" aria-selected="false" tabindex="-1" data-account-tab="orders">Pedidos</button>
+          <button type="button" role="tab" id="tab-admin" aria-controls="admin-panel" aria-selected="false" tabindex="-1" data-account-tab="admin" hidden>Administração</button>
+        </nav>
+        <section id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" class="account-view">
+          <div class="account-welcome"><span class="avatar" id="customer-avatar" aria-hidden="true">M</span><div><h3 id="customer-greeting">Sua próxima viagem começa aqui.</h3><p id="account-summary">Carregando sua conta…</p></div></div>
+          <div class="summary-grid">
+            <button type="button" class="summary-card" data-account-open="products"><span>Produtos ativos</span><strong id="summary-products">—</strong><span>Acessar meus produtos ↗</span></button>
+            <button type="button" class="summary-card" data-account-open="orders"><span>Seus pedidos</span><strong id="summary-orders">—</strong><span>Acompanhar compras ↗</span></button>
+          </div>
+          <div class="account-next"><h4 id="account-next-title">Prepare seu Max Hub</h4><p id="account-next-copy">Instale o Hub no PC e acesse Meus produtos para ativar o que você comprou.</p><button type="button" class="btn btn-accent" data-download="windows">Baixar Max Hub ↓</button></div>
+        </section>
+        <section id="panel-products" role="tabpanel" aria-labelledby="tab-products" class="account-view" hidden>
+          <h3>Meus produtos</h3>
+          <p>Abra um produto para ver a chave de ativação. Cole a chave em Ativar com chave no Hub.</p>
+          <div id="licenses"></div>
+          <button type="button" class="btn btn-dense" id="download-apk" hidden>Baixar APK do Max GPS ↓</button>
+          <details class="claim-details"><summary>Recebeu uma chave de teste?</summary>
+          <p>Vincule a chave à sua conta para acessar os downloads disponíveis.</p>
+          <form id="claim-form" class="field-row">
+            <label class="sr-only" for="claim-key">Chave de teste</label>
+            <input type="text" id="claim-key" placeholder="Cole a chave recebida" required maxlength="100" spellcheck="false" autocapitalize="characters" autocomplete="off">
+            <button type="submit" class="btn btn-card">Vincular</button>
+          </form>
+          </details>
+        </section>
+        <section id="panel-orders" role="tabpanel" aria-labelledby="tab-orders" class="account-view" hidden>
+          <h3>Meus pedidos</h3>
+          <div id="orders"></div>
+        </section>
+        <section class="account-view admin-section" id="admin-panel" role="tabpanel" aria-labelledby="tab-admin" hidden>
+          <h3>Administração</h3>
+          <p>Consulte pedidos, gerencie os acessos de teste e acompanhe a operação da loja.</p>
+          <button type="button" class="inline-action" id="demo-sale">Testar animação de venda · demonstração</button>
+          <button type="button" class="btn btn-card" id="admin-orders">Consultar pedidos</button>
+          <div id="admin-order-list"></div>
+          <button type="button" class="inline-action" id="admin-more-orders" hidden>Carregar mais pedidos ↓</button>
+          <h4 class="admin-subtitle">Licenças de teste</h4>
+          <button type="button" class="btn btn-card" id="admin-licenses">Consultar licenças</button>
+          <div id="admin-license-list"></div>
+          <form id="admin-create" class="admin-form">
+            <h4>Criar chave de teste</h4>
+            <label>Produto <select id="test-product" required><option value="combo">Combo Max Hub</option><option value="track">MaxTrack Pro</option><option value="gps">Max GPS</option><option value="media">Max Multimídia</option></select></label>
+            <label>Validade em dias <input id="test-days" type="number" min="1" max="365" value="30" required></label>
+            <label>Identificação <input id="test-label" maxlength="150" placeholder="Ex.: teste do João"></label>
+            <button type="submit" class="btn btn-dense">Gerar chave</button>
+          </form>
+          <div id="admin-key-result" hidden></div>
+          <form id="admin-revoke" class="admin-form">
+            <h4>Revogar chave de teste</h4>
+            <label>ID da licença <input id="revoke-id" maxlength="150" required></label>
+            <button type="submit" class="btn btn-card">Revogar chave</button>
+          </form>
+        </section>
+      </section>
+    </div>
+  </dialog>
+  <aside class="sale-notice" id="sale-notice" role="status" aria-live="polite" hidden>
+    <span class="sale-mark" aria-hidden="true">✓</span>
+    <div><strong id="sale-title"></strong><p id="sale-detail"></p></div>
+    <button type="button" id="close-sale" aria-label="Fechar aviso de compra">×</button>
+  </aside>
+</body>
+</html>

@@ -1,0 +1,2 @@
+build-support/resources/*.zip filter=lfs diff=lfs merge=lfs -text
+build-support/signing.enc -text

@@ -1,0 +1,15 @@
+MaxTrack 0.9.7 - correcao de regressao
+
+1. Feche o MaxTrack antigo. Extraia em uma pasta NOVA.
+2. Rode INSTALAR.bat (instala MediaPipe 0.10.21).
+3. Rode INICIAR.bat.
+4. Confirme que a camera mostra seu rosto e que POSE BRUTA muda ao virar a cabeca.
+5. Pressione F10 olhando para frente; F9 para ativar.
+6. No OpenTrack: UDP over network, porta 4242, saida freetrack 2.0 Enhanced.
+7. Se a POSE BRUTA nao mudar, envie maxtrack_diagnostico.log.
+8. Se POSE BRUTA mudar mas a saida continuar zero, teste zona morta 0.0.
+
+Ajustes iniciais: horizontal 1.5, vertical 1.0, zona morta 0.8, suavizacao 0.25, inverter horizontal ligado.
+Observacao: se voce copiar config.json antigo, clique Restaurar perfil ETS2.
+
+MaxTrack v0.9.8: Teste UDP sem webcam (3 segundos). Abra OpenTrack e clique Start.

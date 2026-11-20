@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="pt-BR">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MaxTrack Hub</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#0d151e;color:#edf6fa;font:16px system-ui}main{max-width:860px;margin:auto;padding:22px}header{display:flex;align-items:center;justify-content:space-between;gap:10px}h1{margin:0;font-size:26px}h2{font-size:15px;margin:0;color:#abc0d0}small{color:#a8bdce}.status{color:#60e3c4;font-size:13px}section{background:#162432;border:1px solid #294252;border-radius:20px;padding:17px;margin-top:16px}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.metric{margin-top:0}.metric strong{display:block;font-size:clamp(26px,7vw,44px);font-variant-numeric:tabular-nums}.metrics{margin-top:16px}canvas{display:block;width:100%;height:210px;margin-top:10px;background:#0c1923;border-radius:12px}button,a{display:inline-block;border:1px solid #3c6475;border-radius:10px;padding:11px 14px;background:#213d4e;color:#effaff;font:inherit;text-decoration:none;cursor:pointer}button[aria-pressed=true]{background:#60e3c4;color:#102625}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}.note{color:#a8bdce;font-size:13px;margin-bottom:0}
+</style>
+<main>
+<header><div><small>ETS2 · PAINEL NO CELULAR</small><h1>MaxTrack Hub</h1></div><span id="status" class="status">Aguardando jogo</span></header>
+<div class="grid metrics">
+  <section class="metric"><h2>Velocidade</h2><strong id="speed">—</strong><small>km/h</small></section>
+  <section class="metric"><h2>Limite</h2><strong id="limit">—</strong><small>km/h</small></section>
+  <section class="metric"><h2>Distância restante</h2><strong id="distance">—</strong><small>km do jogo</small></section>
+  <section class="metric"><h2>Tempo restante</h2><strong id="eta">—</strong><small>estimativa do jogo</small></section>
+</div>
+<section><h2>Percurso registrado nesta sessão</h2><canvas id="trail" aria-label="Traçado dos últimos pontos do caminhão"></canvas><p class="note">Mostra os pontos já percorridos desde que esta tela abriu.</p></section>
+<section><h2>Voz e multimídia</h2><div class="actions"><button id="voice" aria-pressed="false">Ativar avisos de voz</button><a href="https://www.youtube.com/" target="_blank" rel="noopener noreferrer">YouTube</a><a href="https://web.whatsapp.com/" target="_blank" rel="noopener noreferrer">WhatsApp</a></div><p class="note">Os atalhos abrem os serviços no celular.</p></section>
+</main>
+<script>
+const el = id => document.getElementById(id);
+const key = new URLSearchParams(location.search).get('chave');
+let voice = false, lastAlert = 0, checkpoint = null;
+const points = [];
+const speak = message => {
+  const speech = new SpeechSynthesisUtterance(message);
+  speech.lang = 'pt-BR';
+  speechSynthesis.speak(speech);
+};
+el('voice').onclick = () => {
+  if (!('speechSynthesis' in window)) { el('voice').textContent = 'Voz indisponível neste navegador'; return; }
+  voice = !voice;
+  el('voice').setAttribute('aria-pressed', voice);
+  el('voice').textContent = voice ? 'Silenciar avisos' : 'Ativar avisos de voz';
+  speechSynthesis.cancel();
+  if (voice) speak('Avisos do MaxTrack ativados.');
+};
+function draw(t) {
+  const c = el('trail'), w = c.clientWidth, h = c.clientHeight, ratio = devicePixelRatio || 1;
+  if (c.width !== Math.round(w*ratio) || c.height !== Math.round(h*ratio)) { c.width = w*ratio; c.height = h*ratio; }
+  const ctx = c.getContext('2d');
+  ctx.setTransform(ratio,0,0,ratio,0,0);
+  ctx.clearRect(0,0,w,h);
+  if (!t) return;
+  const prev = points.at(-1);
+  if (!prev || Math.hypot(t.x-prev.x,t.z-prev.z) > 3) points.push(t);
+  if (points.length > 300) points.shift();
+  const minX = Math.min(...points.map(p=>p.x)), maxX = Math.max(...points.map(p=>p.x));
+  const minZ = Math.min(...points.map(p=>p.z)), maxZ = Math.max(...points.map(p=>p.z));
+  const scale = Math.min((w-38)/Math.max(30,maxX-minX),(h-38)/Math.max(30,maxZ-minZ));
+  const x = p => w/2+(p.x-(minX+maxX)/2)*scale;
+  const y = p => h/2+(p.z-(minZ+maxZ)/2)*scale;
+  ctx.strokeStyle='#60e3c4';ctx.lineWidth=3;ctx.beginPath();
+  points.forEach((p,i)=>i ? ctx.lineTo(x(p),y(p)) : ctx.moveTo(x(p),y(p)));ctx.stroke();
+  ctx.save();ctx.translate(x(t),y(t));ctx.rotate(-t.heading*2*Math.PI);
+  ctx.fillStyle='#fff';ctx.beginPath();ctx.moveTo(0,-10);ctx.lineTo(7,7);ctx.lineTo(0,4);ctx.lineTo(-7,7);ctx.fill();ctx.restore();
+}
+function update(t) {
+  el('status').textContent = t ? '● Ao vivo' : 'Aguardando jogo';
+  el('speed').textContent = t && t.speed !== -1 ? Math.round(Math.abs(t.speed)*3.6) : '—';
+  el('limit').textContent = t && t.limit > 0 ? Math.round(t.limit*3.6) : '—';
+  el('distance').textContent = t && t.distance > 0 ? (t.distance/1000).toLocaleString('pt-BR',{maximumFractionDigits:1}) : '—';
+  el('eta').textContent = t && t.seconds > 0 ? `${Math.floor(t.seconds/3600)}h ${Math.floor(t.seconds/60)%60}m` : '—';
+  draw(t);
+  if (!t) { checkpoint=null; return; }
+  if (!voice) return;
+  if (t.limit>0 && t.speed-t.limit>2.2 && Date.now()-lastAlert>30000) {
+    speak('Atenção. Acima do limite de velocidade.');lastAlert=Date.now();
+  }
+  if (t.distance>0) {
+    const km = Math.floor(t.distance/10000)*10;
+    if (checkpoint!==null && km<checkpoint && km>=10) speak(`Restam aproximadamente ${Math.round(t.distance/1000)} quilômetros.`);
+    checkpoint=km;
+  } else checkpoint=null;
+}
+async function poll() {
+  try {
+    const response=await fetch(`/telemetria?chave=${encodeURIComponent(key)}`,{signal:AbortSignal.timeout(2500)});
+    update(response.ok ? (await response.json()).truck : null);
+  } catch { update(null); }
+  setTimeout(poll,300);
+}
+poll();
+</script>
+</html>

@@ -1,0 +1,4 @@
+00:00:48.340 : loading 'MaxTrackBridge' 'C:/Program Files (x86)/Steam/steamapps/common/Euro Truck Simulator 2/bin/win_x64/plugins/MaxTrackBridge.dll'
+00:00:50.173 : MaxTrack bridge: localhost UDP 4243; experimental camera binding required
+00:00:50.491 : [sdk] Initializing device 'MaxTrack Pro Experimental' as 'maxtrack'
+00:01:40.534 : unloaded 'MaxTrackBridge'

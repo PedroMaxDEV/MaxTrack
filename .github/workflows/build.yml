@@ -1,0 +1,39 @@
+name: Windows package
+on: [workflow_dispatch]
+jobs:
+  build:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          architecture: x64
+      - run: python -m pip install -r requirements-build.txt
+      - run: python -m pip check
+      - run: python -m unittest discover -s tests -v
+      - run: python tests/smoke_ui.py
+      - run: cmake -S bridge -B build/bridge -A x64
+      - run: cmake --build build/bridge --config Release
+      - run: ctest --test-dir build/bridge -C Release --output-on-failure
+      - run: python installer/make_brand.py
+      - run: python -m PyInstaller --noconfirm --clean --onedir --windowed --name MaxTrackPro --icon installer/MaxTrackPro.ico --collect-all mediapipe maxtrack.py
+      - run: |
+          $report = Join-Path $PWD 'build/package-self-test.json'
+          $process = Start-Process dist/MaxTrackPro/MaxTrackPro.exe -ArgumentList '--self-test', $report -Wait -PassThru
+          if ($process.ExitCode -ne 0 -or !(Test-Path $report)) { throw 'Package self-test failed' }
+          if ((Get-Content $report | ConvertFrom-Json).status -ne 'passed') { throw 'Package self-test failed' }
+      - run: |
+          New-Item -ItemType Directory -Force dist/MaxTrackPro/bridge
+          Copy-Item build/bridge/Release/MaxTrackBridge.dll dist/MaxTrackPro/bridge/
+          Copy-Item vendor/scs_sdk/sdk_license.txt dist/MaxTrackPro/bridge/
+          Copy-Item bridge/README.md dist/MaxTrackPro/bridge/
+          New-Item -ItemType Directory -Force dist/MaxTrackPro/docs
+          Copy-Item docs/RELEASE_STATUS.md,docs/TESTES-WINDOWS.md,docs/LICENCAS-REVISAO.md,docs/ANTI-TREMOR.md,docs/RESPOSTA-0.9.11.md dist/MaxTrackPro/docs/
+      - run: python installer/collect_notices.py
+      - run: python -m PyInstaller --noconfirm --onefile --windowed --name MaxTrackETS2Setup --distpath dist/installer-tools --specpath build ets2_install.py
+      - run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer\MaxTrackPro.iss'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MaxTrackPro-Setup
+          path: dist/installer/MaxTrackPro-Setup.exe

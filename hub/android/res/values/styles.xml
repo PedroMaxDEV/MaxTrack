@@ -1,0 +1,8 @@
+<resources>
+    <style name="MaxTheme" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">#0D141A</item>
+        <item name="android:statusBarColor">#0D141A</item>
+        <item name="android:navigationBarColor">#0D141A</item>
+        <item name="android:colorAccent">#B5F45B</item>
+    </style>
+</resources>
