@@ -288,3 +288,9 @@ da extração real anterior: 398 cidades com empresas, 87.705 nós e 91.279
 segmentos. Grafo, faixas e locais comparados à saída anterior; novo arquivo
 aceito integralmente por read_map. Três testes de mapas aprovados. EAA, RBR,
 renderização de cidades no Android e teste de jogo não verificados. Sem PR.
+
+20/11/2026 — JOAO — joao/gps-estradas-desafiadoras. Teste de geração com os
+dois arquivos locais do Estradas Desafiadoras: o parser identificou rotafg.mbd,
+23 setores. O gerador alternativo produziu JSON aceito pelo Hub com 24 cidades,
+6.757 nós e 7.032 segmentos. Sem download, alteração de código ou teste físico.
+Próxima ação: comparar uma rota do mod no ETS2 com o mapa no aparelho. Sem PR.
