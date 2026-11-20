@@ -43,6 +43,7 @@ function Invoke-Build([string]$Program, [string[]]$Arguments) {
 }
 Invoke-Build (Join-Path $tools 'aapt2.exe') @('compile','--dir','hub/android/res','-o',$resources)
 $versionArgs = @()
+if ($VersionName -or $VersionCode) { $versionArgs += '--replace-version' }
 if ($VersionName) { $versionArgs += @('--version-name', $VersionName) }
 if ($VersionCode) { $versionArgs += @('--version-code', [string]$VersionCode) }
 Invoke-Build (Join-Path $tools 'aapt2.exe') (@('link','-o',$unsigned,'--manifest','hub/android/AndroidManifest.xml','-I',$platform) + $versionArgs + $resources)
