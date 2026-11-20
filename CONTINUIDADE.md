@@ -269,3 +269,22 @@ Verificações nesta máquina:
   compatível de estradas do autor. Não há validação de acesso fora da LAN,
   de equivalência à rota do jogo ou de cobertura de todos os mods. Pacote de
   produção depende da credencial comercial e das validações já pendentes.
+
+## 20/11/2026 — JOAO — joao/gps-verificar-eldorado
+
+Verificação de exportação para GPS. O log confirmou /map/eldorado.mbd.
+Os cinco pacotes ME permitem listar um índice ZIP convencional com cinco
+entradas cada e zero setores map/*.base visíveis. Nenhum grafo identificado
+pela busca de JSON na pasta de documentos do jogo. O ts-map de dariowouters
+documenta renderização e tiles para mods compatíveis. Não foi executado:
+a consulta local de download no GitHub falhou na resolução de DNS.
+O SDK incluído expõe posição do veículo e métricas do navegador. A telemetria
+e o log não entregaram a malha rodoviária do Eldorado. Próxima ação para
+este perfil: testar exportação de estradas compatível fornecida pela equipe.
+
+Conversão Max GPS passou a conservar as cidades extraídas, X/Z, identificador
+regional original e empresas. BR Brasil 6.1 reprocessado a partir dos dados
+da extração real anterior: 398 cidades com empresas, 87.705 nós e 91.279
+segmentos. Grafo, faixas e locais comparados à saída anterior; novo arquivo
+aceito integralmente por read_map. Três testes de mapas aprovados. EAA, RBR,
+renderização de cidades no Android e teste de jogo não verificados. Sem PR.

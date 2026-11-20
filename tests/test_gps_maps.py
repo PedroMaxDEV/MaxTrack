@@ -16,11 +16,14 @@ class GpsMaps(unittest.TestCase):
                 "roads": [dict(startNodeUid="a", endNodeUid="b", roadLookToken="local")],
                 "roadLooks": [dict(token="local", lanesLeft=[], lanesRight=["local"])],
                 "prefabs": [], "prefabDescriptions": [],
+                "cities": [dict(token="cidade", name="Cidade", countryToken="sp", x=20, y=-40)],
                 "pois": [dict(type="facility", icon="gas_ico", x=40, y=5)],
             }
             for group, items in data.items():
                 (root / f"europe-{group}.json").write_text(json.dumps(items))
             graph = convert_graph(root, None, "Externo")
+            self.assertEqual(graph["cities"], [dict(id="cidade", name="Cidade", regionId="sp",
+                                                   x=20, z=-40, companies=[])])
             self.assertGreater(len(graph["nodes"]), 2)
             self.assertTrue(any(z > 0 for x, z in graph["nodes"]))
             self.assertTrue(all(direction == 1 for _, _, direction in graph["roads"]))

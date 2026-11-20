@@ -224,9 +224,19 @@ def convert_graph(parsed, result, name):
                 if kind == 'company':
                     place.update(city=point['cityToken'], company=point['icon'])
                 places.append(place)
+    companies_by_city = {}
+    for place in places:
+        if place['type'] == 'company':
+            companies_by_city.setdefault(place['city'], set()).add(place['company'])
+    cities = []
+    if (parsed / 'europe-cities.json').is_file():
+        for city in parsed_items(parsed, 'cities'):
+            cities.append({'id': city['token'], 'name': city['name'], 'regionId': city.get('countryToken'),
+                           'x': round(city['x'], 2), 'z': round(city['y'], 2),
+                           'companies': sorted(companies_by_city.get(city['token'], ()))})
     hints = [[indexes[a], indexes[b], count, mask] for (a, b), (count, mask) in lanes.items()
              if (a, b) in directed]
-    return {'lanes': hints, 'places': places, 'version': 1, 'name': name, 'nodes': positions, 'roads': segments}
+    return {'cities': cities, 'lanes': hints, 'places': places, 'version': 1, 'name': name, 'nodes': positions, 'roads': segments}
 
 
 def build(game, mods, cache, status, bundled_archive=None, expected_module=None):
