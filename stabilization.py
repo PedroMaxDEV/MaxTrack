@@ -16,6 +16,8 @@ def smoothing_alpha(error,dt,smoothing,responsive=True):
     return 1-math.exp(-dt/max(.001,tau))
 
 def stabilize(value, previous, radius):
+    if radius > 0 and abs(value) <= radius:
+        return 0.0
     if radius <= 0 or previous is None:
         return float(value)
     difference = value - previous

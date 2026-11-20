@@ -188,3 +188,36 @@ Verificado com resultado.
 Pendências e próxima ação.
 Commit/PR quando houver.
 
+
+## 20/11/2026 — JOAO — joao/centralizacao-maxtrack
+
+Base 3d3b978 de main/origin/main. Checkout separado para preservar a frente MAX.
+O filtro de saída mantinha cerca de ±0,6° no retorno após olhar pela janela.
+Agora cada eixo volta a zero dentro do raio antitremor configurado. A ampliação
+lateral por aproximação já estava implementada em CabinMotion.
+
+Regressão reproduzida antes e aprovada depois, nos dois lados a 10/15/30/60 FPS
+com pitch diferente de zero. Os 11 testes de estabilização passaram. Suíte
+Python completa: 20 de 22 passaram, incluindo perfis locais e Steam simulados.
+O teste de comparação depende de backups/original-0.9.8/maxtrack.py, ausente
+do checkout. O teste UDP real expirou no loopback. O teste com captura do pacote
+passou. Próxima ação: validar F10, volta ao centro e aproximação no ETS2 com
+webcam real e observar se a estimativa facial ainda deixa desvio.
+
+Diagnóstico das demais prioridades:
+- GPS: o parser recebe a lista de mods, o gerador seleciona europe e exporta
+  arestas entre nós. Android baixa por revisão e desenha grafo e rastro. Faltam
+  o conjunto específico do mod e comparação de uma estrada ausente desde o
+  log do extrator até o grafo no celular.
+- Voz: checksum do pacote conferido. PcVoice.synthesize_local com Piper/Faber
+  gerou WAV de 26682 amostras a 22050 Hz sem usar voz do sistema. Android usa
+  TextToSpeech e tem fallback para áudio do Hub. Falta ouvir nos dois destinos.
+- Multimídia: janela Windows sobreposta, atalho F8 e comandos do celular.
+  SDK incluído expõe entrada e telemetria. Nenhuma implementação de textura
+  de tablet na cabine identificada; requer protótipo com interior compatível.
+- Loja: seis testes locais de domínio passaram e store.js passou na verificação
+  de sintaxe. Compra, ativação real, atualização e sessão real seguem pendentes.
+- Build comercial: MAXHUB_BUILD_PASSWORD e arquivo local de senha ausentes.
+  Validar teste de regressão em checkout limpo e executar fluxo com credencial
+  existente antes de entregar instalador, APK e ZIP. Publicação com Pedro.
+  Alteração em commit local desta branch, sem PR publicado.

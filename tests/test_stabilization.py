@@ -28,6 +28,24 @@ class StabilizationTests(unittest.TestCase):
     def test_turn_has_bounded_offset(self):
         self.assertAlmostEqual(stabilize(40,0,.6),39.4)
         self.assertAlmostEqual(stabilize(-40,0,.6),-39.4)
+    def test_transmitted_yaw_settles_at_zero_with_pitch_held(self):
+        for fps in (10, 15, 30, 60):
+            for side in (-1, 1):
+                with self.subTest(fps=fps, side=side):
+                    motion = CabinMotion()
+                    dt = 1 / fps
+                    motion.update(0., 0., .25, .25, dt)
+                    yaw = pitch = 0.
+                    for heading, span in [(46. * side, .32), (0., .25)]:
+                        for _ in range(2 * fps):
+                            target = motion.update(heading, 12., span, .25, dt)
+                            yaw = stabilize(target[0], yaw, .6)
+                            pitch = stabilize(target[1], pitch, .6)
+                        if heading:
+                            self.assertGreater(side * yaw, 115.)
+                    self.assertEqual(yaw, 0.)
+                    self.assertAlmostEqual(pitch, 12., delta=.61)
+
     def test_zero_disables(self):
         self.assertEqual(stabilize(20.2,20,0),20.2)
 
