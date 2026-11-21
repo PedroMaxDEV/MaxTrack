@@ -294,3 +294,19 @@ dois arquivos locais do Estradas Desafiadoras: o parser identificou rotafg.mbd,
 23 setores. O gerador alternativo produziu JSON aceito pelo Hub com 24 cidades,
 6.757 nós e 7.032 segmentos. Sem download, alteração de código ou teste físico.
 Próxima ação: comparar uma rota do mod no ETS2 com o mapa no aparelho. Sem PR.
+
+## 21/11/2026 - JOAO - joao/validar-build-0.4.3
+
+Ajustadas as definições de scs_input_init e scs_input_shutdown para compilar
+com MSVC e as declarações do SDK. A bridge e a telemetria compilaram em Release
+x64. dumpbin confirmou os dois exports da bridge. O teste bridge_transport
+falhou no primeiro eixo recebido por UDP. Um teste independente de loopback UDP
+também expirou. Repetir em ambiente com UDP funcional antes de liberar.
+
+APK de desenvolvimento recompilado do commit f81d9ba. O APK comercial local
+0.4.3 (8), pacote com.maxhub.gps, passou em apksigner v2/v3 e zipalign.
+Manifesto, classes.dex e recursos coincidiram com a recompilação.
+Sem teste no aparelho. Instalador e deploy pendentes: senha da assinatura
+indisponível na sessão e DNS sem acesso ao GitHub e ao Hosting maxhub-ets2.
+Próximo passo: rodar os testes e a build assinada com a credencial existente,
+validar atualização no Android e publicar o pacote no Firebase.

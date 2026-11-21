@@ -72,7 +72,7 @@ SCSAPI_RESULT poll(scs_input_event_t* event, scs_u32_t flags, scs_context_t) {
 }
 }
 
-__declspec(dllexport) SCSAPI_RESULT scs_input_init(scs_u32_t version, const scs_input_init_params_t* params) {
+SCSAPI_RESULT scs_input_init(scs_u32_t version, const scs_input_init_params_t* params) {
     if (version != SCS_INPUT_VERSION_1_00) return SCS_RESULT_unsupported;
     if (!params) return SCS_RESULT_generic_error;
     cleanup();
@@ -114,4 +114,4 @@ __declspec(dllexport) SCSAPI_RESULT scs_input_init(scs_u32_t version, const scs_
     return result;
 }
 
-__declspec(dllexport) SCSAPI_VOID scs_input_shutdown() { cleanup(); }
+SCSAPI_VOID scs_input_shutdown() { cleanup(); }
