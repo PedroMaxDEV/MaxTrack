@@ -319,3 +319,15 @@ da loja aprovados. APK 0.4.3 (8) com assinaturas v2/v3 e alinhamento válidos.
 Preparado ZIP Android para Pedro publicar somente functions:api, com SHA-256
 do APK conferido após empacotar. Testes no telefone e na loja publicada pendentes.
 Para Windows, falta executar a build com MAXHUB_BUILD_PASSWORD e UDP funcional.
+
+21/11/2026 - JOAO - Build manual Windows x64 0.4.3 concluída. Chaves públicas de
+atualização e licença conferidas nos dois clientes instalados 0.4.2; mantidos
+domínio maxhub-ets2.web.app e configuração comercial. Recompilados Hub, MaxTrack
+e auxiliar ETS2. Instalador Inno Setup 0.4.3 gerado (409410148 bytes), com DLLs,
+mapas e voz. O autoteste do tracker empacotado passou com Tk, FaceMesh, OpenCV
+e NumPy; o diagnóstico do Hub informou 0.4.3 e falha DNS nas consultas online.
+Criado MaxHub-0.4.3-teste-Pedro.zip com instalador, APK comercial, configuração
+pública e instruções de assinatura; SHA-256 dos arquivos conferido dentro do ZIP.
+Próxima ação: instalar sobre 0.4.2 na máquina de teste e validar no ETS2 e no
+Android. Atualização automática requer manifesto assinado com a chave existente
+do Pedro e publicação no Firebase. Sem deploy ou teste de upgrade instalado.
