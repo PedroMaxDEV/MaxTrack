@@ -44,7 +44,7 @@ class Regression(unittest.TestCase):
         self.assertEqual(struct.unpack('<6d',app.sock.payload),(0,0,0,0,0,0))
 
     def test_tracking_engine_unchanged(self):
-        old = functions(ROOT / 'backups/original-0.9.8/maxtrack.py')
+        old = functions(ROOT / 'tests/fixtures/tracking_baseline.py')
         new = functions(ROOT / 'maxtrack.py')
         for name in ('estimate_pose', 'fallback_pose', 'clamp', 'deadzone'):
             self.assertEqual(ast.dump(old[name]), ast.dump(new[name]), name)

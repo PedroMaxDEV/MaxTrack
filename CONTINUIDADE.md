@@ -310,3 +310,12 @@ Sem teste no aparelho. Instalador e deploy pendentes: senha da assinatura
 indisponível na sessão e DNS sem acesso ao GitHub e ao Hosting maxhub-ets2.
 Próximo passo: rodar os testes e a build assinada com a credencial existente,
 validar atualização no Android e publicar o pacote no Firebase.
+
+21/11/2026 - JOAO - joao/validar-build-0.4.3. Teste de regressão passou
+a comparar as cinco definições com uma referência versionada extraída do
+commit inicial 3d3b978. A cópia antiga de backups não acompanha o Git.
+Python 24/25, pendente recepção UDP local por timeout. Seis testes de domínio
+da loja aprovados. APK 0.4.3 (8) com assinaturas v2/v3 e alinhamento válidos.
+Preparado ZIP Android para Pedro publicar somente functions:api, com SHA-256
+do APK conferido após empacotar. Testes no telefone e na loja publicada pendentes.
+Para Windows, falta executar a build com MAXHUB_BUILD_PASSWORD e UDP funcional.
